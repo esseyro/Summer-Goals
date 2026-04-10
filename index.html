@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Summer Goals</title>
+
+<!-- PWA Meta -->
+<meta name="application-name" content="Summer Goals">
+<meta name="description" content="Offline calorie tracker — Eritrea Edition">
+<meta name="theme-color" content="#a855f7">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- iOS Safari PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Summer Goals">
+
+<!-- PWA Manifest -->
+<link rel="manifest" id="pwaManifest">
+
+<!-- iOS icons (inline SVG as data URIs) -->
+<link rel="apple-touch-icon" id="appleIcon">
+
+<!-- Splash screen color for iOS -->
+<meta name="msapplication-TileColor" content="#08060f">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08060f;--bg2:#100d1a;--bg3:#161124;--card:#1a1530;
+  --purple:#a855f7;--purple2:#7c3aed;--purple3:#c084fc;
+  --glow:rgba(168,85,247,0.35);--glow2:rgba(168,85,247,0.12);
+  --pink:#e879f9;--text:#f0e8ff;--muted:rgba(240,232,255,0.5);
+  --dimmed:rgba(240,232,255,0.22);--border:rgba(168,85,247,0.28);
+  --border2:rgba(168,85,247,0.12);--over:#f43f5e;--green:#22c55e;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);font-family:'Outfit',sans-serif;color:var(--text);display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(124,58,237,0.2) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 60% at 85% 90%,rgba(168,85,247,0.13) 0%,transparent 60%);
+  pointer-events:none;}
+body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
+  background-image:linear-gradient(rgba(168,85,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,0.03) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;}
+
+/* ── SCREENS ── */
+.screen{position:absolute;top:0;right:0;bottom:0;left:0;z-index:1;overflow-y:auto;overflow-x:hidden;padding-bottom:80px;display:none;-webkit-overflow-scrolling:touch;}
+.screen.active{display:block;}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(10,8,18,0.96);border-top:1px solid var(--border2);
+  display:flex;align-items:stretch;height:70px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;
+  color:var(--dimmed);transition:all .2s;padding:8px 0;border:none;background:none;
+  font-family:'Outfit',sans-serif;
+}
+.nav-item.active{color:var(--purple3);}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px rgba(168,85,247,0.8));}
+.nav-icon{font-size:22px;line-height:1;transition:transform .2s;}
+.nav-item.active .nav-icon{transform:translateY(-2px);}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:0.5px;}
+
+/* ── FAB (center add button) ── */
+.nav-fab{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;border:none;background:none;
+  font-family:'Outfit',sans-serif;
+}
+.fab-circle{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--purple2),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;line-height:1;box-shadow:0 0 20px var(--glow);
+  margin-top:-18px;transition:all .2s;border:3px solid var(--bg);
+}
+.nav-fab:hover .fab-circle{transform:scale(1.1);}
+.nav-fab-label{font-size:10px;font-weight:600;color:var(--dimmed);letter-spacing:0.5px;margin-top:2px;}
+
+/* ── SHARED COMPONENTS ── */
+.page-header{
+  background:linear-gradient(180deg,rgba(8,6,15,0.98),rgba(16,13,26,0.95));
+  padding:52px 20px 16px;position:sticky;top:0;z-index:50;
+  border-bottom:1px solid var(--border2);
+}
+.page-title{font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
+.page-sub{font-size:12px;color:var(--dimmed);margin-top:2px;}
+
+/* ── DASHBOARD SCREEN ── */
+.dash-greeting{padding:52px 20px 0;}
+.greeting-row{display:flex;justify-content:space-between;align-items:flex-start;}
+.greeting-text{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.3px;}
+.greeting-sub{font-size:13px;color:var(--dimmed);margin-top:3px;}
+.date-chip{background:rgba(168,85,247,0.12);border:1px solid var(--border);color:var(--purple3);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;}
+
+/* Big calorie card */
+.cal-hero{
+  margin:16px;background:linear-gradient(135deg,#1a1530,#221840);
+  border-radius:20px;border:1px solid var(--border);padding:20px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+.cal-hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+.cal-hero-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dimmed);}
+.cal-remaining{font-size:52px;font-weight:900;line-height:1;letter-spacing:-2px;
+  background:linear-gradient(135deg,#c084fc,#a855f7,#e879f9);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cal-remaining-lbl{font-size:13px;color:var(--muted);margin-top:4px;font-weight:600;}
+.cal-ring-wrap{position:relative;width:72px;height:72px;}
+.cal-ring-svg{transform:rotate(-90deg);width:72px;height:72px;}
+.cal-ring-bg{fill:none;stroke:rgba(168,85,247,0.12);stroke-width:8;}
+.cal-ring-fill{fill:none;stroke:url(#rGrad);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .7s ease;}
+.cal-ring-fill.over{stroke:var(--over);}
+.cal-ring-center{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.cal-ring-num{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--text);line-height:1;}
+.cal-ring-sub{font-size:8px;color:var(--dimmed);letter-spacing:1px;text-transform:uppercase;}
+
+/* Cal stats row */
+.cal-stats{display:flex;gap:0;border-top:1px solid var(--border2);padding-top:16px;}
+.cal-stat{flex:1;text-align:center;}
+.cal-stat+.cal-stat{border-left:1px solid var(--border2);}
+.cal-stat-val{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--text);}
+.cal-stat-lbl{font-size:10px;color:var(--dimmed);margin-top:2px;letter-spacing:0.5px;}
+
+/* Cal progress bar */
+.cal-bar-wrap{margin-top:14px;}
+.cal-bar-labels{display:flex;justify-content:space-between;margin-bottom:6px;}
+.cal-bar-label{font-size:10px;color:var(--dimmed);}
+.cal-progress-bar{height:6px;background:rgba(168,85,247,0.12);border-radius:3px;overflow:hidden;}
+.cal-progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple2),var(--pink));transition:width .7s ease;}
+.cal-progress-fill.over{background:linear-gradient(90deg,var(--over),#fb7185);}
+
+/* Macro cards */
+.section-title{font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dimmed);padding:0 20px;margin-bottom:10px;}
+.macro-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;margin-bottom:20px;}
+.macro-card{background:var(--card);border-radius:14px;padding:14px 12px;border:1px solid var(--border2);}
+.mc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.mc-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.mc-icon.pr{background:rgba(96,165,250,0.15);}
+.mc-icon.ca{background:rgba(168,85,247,0.15);}
+.mc-icon.fa{background:rgba(232,121,249,0.15);}
+.mc-pct{font-size:11px;font-weight:700;color:var(--dimmed);}
+.mc-val{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;color:var(--text);}
+.mc-name{font-size:10px;color:var(--dimmed);margin-top:2px;}
+.mc-bar{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-top:8px;}
+.mc-bar-fill{height:100%;border-radius:2px;transition:width .6s ease;}
+.mc-bar-fill.pr{background:linear-gradient(90deg,#60a5fa,#818cf8);}
+.mc-bar-fill.ca{background:linear-gradient(90deg,#a855f7,#c084fc);}
+.mc-bar-fill.fa{background:linear-gradient(90deg,#e879f9,#f43f5e);}
+
+/* Steps card */
+.steps-card{
+  margin:0 16px 20px;background:var(--card);border-radius:16px;
+  padding:16px;border:1px solid var(--border2);
+  display:flex;align-items:center;gap:14px;
+}
+.steps-icon-wrap{
+  width:50px;height:50px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.05));
+  border:1px solid rgba(34,197,94,0.2);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+}
+.steps-info{flex:1;}
+.steps-val{font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--text);}
+.steps-goal{font-size:11px;color:var(--dimmed);margin-top:1px;}
+.steps-bar{height:5px;background:rgba(34,197,94,0.1);border-radius:3px;overflow:hidden;margin-top:8px;}
+.steps-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width .7s ease;}
+.steps-cals{text-align:right;flex-shrink:0;}
+.steps-cals-val{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--green);}
+.steps-cals-lbl{font-size:10px;color:var(--dimmed);}
+.steps-edit-btn{background:none;border:1px solid var(--border);color:var(--purple3);padding:4px 10px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;margin-top:4px;transition:all .2s;}
+.steps-edit-btn:hover{background:rgba(168,85,247,0.1);}
+
+/* Today's meals on dashboard */
+.meal-log-section{padding:0 16px;}
+.meal-log-card{background:var(--card);border-radius:16px;margin-bottom:10px;overflow:hidden;border:1px solid var(--border2);}
+.meal-log-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 14px;
+  background:linear-gradient(90deg,rgba(124,58,237,0.3),rgba(168,85,247,0.15));
+  border-bottom:1px solid var(--border2);
+}
+.mlh-left{display:flex;align-items:center;gap:10px;}
+.mlh-icon{font-size:18px;}
+.mlh-name{font-size:14px;font-weight:700;color:var(--text);}
+.mlh-cal{font-family:'Space Mono',monospace;font-size:12px;color:var(--purple3);font-weight:700;}
+.meal-log-item{display:flex;align-items:center;padding:10px 14px;gap:10px;border-bottom:1px solid rgba(168,85,247,0.06);animation:slideIn .3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:translateX(0);}}
+.meal-log-item:last-child{border-bottom:none;}
+.mli-thumb{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border2);}
+.mli-placeholder{width:38px;height:38px;border-radius:8px;background:rgba(168,85,247,0.08);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;border:1px solid var(--border2);}
+.mli-info{flex:1;}
+.mli-name{font-size:13px;font-weight:600;color:var(--text);}
+.mli-sub{font-size:10px;color:var(--dimmed);margin-top:1px;font-family:'Space Mono',monospace;}
+.mli-cal{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--purple3);}
+.mli-rm{background:none;border:none;color:var(--dimmed);cursor:pointer;font-size:18px;padding:2px 4px;line-height:1;transition:color .2s;}
+.mli-rm:hover{color:var(--over);}
+.meal-empty-row{padding:12px 14px;font-size:12px;color:var(--dimmed);font-style:italic;}
+.meal-add-btn{
+  width:100%;padding:10px;background:none;border:none;border-top:1px dashed rgba(168,85,247,0.2);
+  color:var(--purple3);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;font-family:'Outfit',sans-serif;transition:background .2s;
+}
+.meal-add-btn:hover{background:rgba(168,85,247,0.06);}
+
+/* ── LOG SCREEN (full food list) ── */
+.search-wrap{padding:10px 16px 0;}
+.search-box{
+  display:flex;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:10px 14px;transition:border-color .2s,box-shadow .2s;
+}
+.search-box:focus-within{border-color:var(--purple);box-shadow:0 0 0 3px rgba(168,85,247,0.12);}
+.search-icon{font-size:16px;color:var(--dimmed);}
+.search-input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:'Outfit',sans-serif;}
+.search-input::placeholder{color:var(--dimmed);}
+.cat-scroll{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;}
+.cat-scroll::-webkit-scrollbar{display:none;}
+.cat-chip{
+  flex-shrink:0;background:rgba(168,85,247,0.07);border:1px solid var(--border2);
+  color:var(--muted);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .2s;white-space:nowrap;font-family:'Outfit',sans-serif;
+}
+.cat-chip.active{background:var(--purple);color:white;border-color:var(--purple);box-shadow:0 0 12px var(--glow);}
+.food-list{padding:0 16px;}
+.food-row{
+  background:var(--card);border-radius:14px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  cursor:pointer;border:1px solid var(--border2);transition:all .2s;
+}
+.food-row:hover,.food-row:active{border-color:var(--purple);box-shadow:0 4px 20px rgba(168,85,247,0.15);}
+.fr-emoji{font-size:26px;width:36px;text-align:center;}
+.fr-info{flex:1;}
+.fr-name{font-size:14px;font-weight:700;color:var(--text);}
+.fr-desc{font-size:11px;color:var(--dimmed);margin-top:2px;}
+.fr-tags{display:flex;gap:5px;margin-top:5px;}
+.fr-tag{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;}
+.fr-tag.p{background:rgba(96,165,250,0.12);color:#93c5fd;}
+.fr-tag.c{background:rgba(168,85,247,0.12);color:#c084fc;}
+.fr-tag.f{background:rgba(232,121,249,0.12);color:#f0abfc;}
+.fr-right{text-align:right;}
+.fr-cal{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;color:var(--purple3);}
+.fr-per{font-size:9px;color:var(--dimmed);letter-spacing:1px;}
+.no-results{text-align:center;padding:50px 20px;color:var(--dimmed);}
+.no-results-icon{font-size:40px;margin-bottom:10px;}
+
+/* ── WEEKLY SCREEN ── */
+.weekly-wrap{padding:0 16px;}
+.week-summary-card{
+  background:var(--card);border-radius:16px;padding:18px;
+  border:1px solid var(--border2);margin-bottom:16px;
+}
+.wsc-title{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dimmed);margin-bottom:14px;}
+.week-bars{display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:8px;}
+.week-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.week-bar-bg{width:100%;flex:1;background:rgba(168,85,247,0.08);border-radius:6px;position:relative;overflow:hidden;min-height:20px;}
+.week-bar-fill{position:absolute;bottom:0;left:0;right:0;border-radius:6px;background:linear-gradient(180deg,var(--pink),var(--purple2));transition:height .6s ease;}
+.week-bar-fill.today{background:linear-gradient(180deg,#e879f9,#a855f7);box-shadow:0 0 10px var(--glow);}
+.week-bar-fill.over{background:linear-gradient(180deg,#fb7185,var(--over));}
+.week-day{font-size:10px;font-weight:700;color:var(--dimmed);}
+.week-day.today{color:var(--purple3);}
+.week-stats-row{display:flex;gap:10px;margin-bottom:16px;}
+.week-stat{flex:1;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border2);text-align:center;}
+.ws-val{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--text);}
+.ws-lbl{font-size:10px;color:var(--dimmed);margin-top:3px;letter-spacing:0.5px;}
+.week-days-detail{display:flex;flex-direction:column;gap:8px;}
+.wdd-row{
+  background:var(--card);border-radius:12px;padding:12px 14px;
+  display:flex;align-items:center;gap:12px;border:1px solid var(--border2);
+}
+.wdd-day{font-size:12px;font-weight:700;color:var(--dimmed);width:30px;}
+.wdd-day.today{color:var(--purple3);}
+.wdd-bar-wrap{flex:1;}
+.wdd-bar-bg{height:6px;background:rgba(168,85,247,0.08);border-radius:3px;overflow:hidden;}
+.wdd-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple2),var(--pink));transition:width .6s ease;}
+.wdd-bar-fill.over{background:linear-gradient(90deg,var(--over),#fb7185);}
+.wdd-cal{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--text);width:70px;text-align:right;}
+
+/* ── CUSTOM SCREEN ── */
+.custom-wrap{padding:0 16px;}
+.custom-section-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.custom-section-sub{font-size:12px;color:var(--dimmed);margin-bottom:18px;}
+.f-group{margin-bottom:13px;}
+.f-label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--purple3);margin-bottom:6px;font-weight:700;}
+.f-input{
+  width:100%;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:11px 14px;font-size:14px;font-family:'Outfit',sans-serif;
+  color:var(--text);outline:none;transition:all .2s;
+}
+.f-input::placeholder{color:var(--dimmed);}
+.f-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(168,85,247,0.12);}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.save-btn{
+  width:100%;background:linear-gradient(135deg,var(--purple2),var(--purple));
+  border:none;color:white;padding:14px;font-size:13px;letter-spacing:1.5px;
+  text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:800;
+  border-radius:12px;cursor:pointer;transition:all .2s;margin-top:4px;
+  box-shadow:0 4px 20px var(--glow);
+}
+.save-btn:hover{transform:translateY(-1px);box-shadow:0 6px 28px var(--glow);}
+
+/* ── SETTINGS SCREEN ── */
+.settings-wrap{padding:0 16px;}
+.settings-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border2);margin-bottom:14px;}
+.sc-title{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dimmed);margin-bottom:14px;}
+.setting-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border2);}
+.setting-row:last-child{border-bottom:none;}
+.sr-icon{font-size:20px;width:34px;text-align:center;}
+.sr-info{flex:1;}
+.sr-name{font-size:14px;font-weight:600;color:var(--text);}
+.sr-desc{font-size:11px;color:var(--dimmed);margin-top:2px;}
+.sr-val{font-family:'Space Mono',monospace;font-size:13px;color:var(--purple3);font-weight:700;}
+.goal-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.notif-permission-banner{
+  background:rgba(168,85,247,0.08);border:1px solid var(--border);
+  border-radius:12px;padding:14px;margin-bottom:12px;
+  display:flex;align-items:center;gap:12px;
+}
+.notif-permission-banner.granted{background:rgba(34,197,94,0.07);border-color:rgba(34,197,94,0.2);}
+.notif-permission-banner.denied{background:rgba(244,63,94,0.07);border-color:rgba(244,63,94,0.2);}
+.npb-icon{font-size:24px;flex-shrink:0;}
+.npb-text{flex:1;}
+.npb-title{font-size:13px;font-weight:700;color:var(--text);}
+.npb-desc{font-size:11px;color:var(--dimmed);margin-top:2px;}
+.npb-btn{background:linear-gradient(135deg,var(--purple2),var(--purple));border:none;color:white;padding:7px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;white-space:nowrap;transition:all .2s;box-shadow:0 2px 10px var(--glow);}
+.notif-card{background:rgba(168,85,247,0.04);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;}
+.notif-card-top{display:flex;align-items:center;gap:12px;}
+.notif-icon{font-size:20px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(168,85,247,0.1);border-radius:8px;flex-shrink:0;}
+.notif-info{flex:1;}
+.notif-name{font-size:13px;font-weight:700;color:var(--text);}
+.notif-time{font-size:10px;color:var(--purple3);font-family:'Space Mono',monospace;margin-top:1px;}
+.notif-toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.notif-toggle input{opacity:0;width:0;height:0;position:absolute;}
+.ntoggle-slider{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(255,255,255,0.08);border-radius:24px;cursor:pointer;transition:all .3s;border:1px solid var(--border);}
+.ntoggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--dimmed);border-radius:50%;transition:all .3s;}
+.notif-toggle input:checked+.ntoggle-slider{background:var(--purple);border-color:var(--purple);box-shadow:0 0 10px var(--glow);}
+.notif-toggle input:checked+.ntoggle-slider:before{transform:translateX(20px);background:white;}
+.test-notif-btn{width:100%;background:rgba(168,85,247,0.07);border:1px dashed rgba(168,85,247,0.3);color:var(--purple3);padding:11px;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:700;border-radius:10px;transition:all .2s;margin-top:10px;}
+.test-notif-btn:hover{background:rgba(168,85,247,0.14);}
+
+/* ── ADD FOOD MODAL ── */
+.overlay{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.82);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.overlay.open{display:flex;}
+.modal{
+  background:var(--bg3);width:100%;max-width:480px;
+  border-radius:22px 22px 0 0;padding:20px 18px 40px;
+  animation:slideUp .25s ease;border:1px solid var(--border);border-bottom:none;
+  max-height:90vh;overflow-y:auto;
+}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:17px;font-weight:800;color:var(--text);margin-bottom:2px;}
+.modal-sub{font-size:12px;color:var(--dimmed);margin-bottom:14px;}
+.photo-row{display:flex;gap:8px;margin-bottom:14px;}
+.photo-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 8px;background:rgba(168,85,247,0.06);border:1px dashed rgba(168,85,247,0.3);border-radius:12px;cursor:pointer;color:var(--purple3);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.photo-btn:hover{background:rgba(168,85,247,0.12);}
+.photo-btn-icon{font-size:22px;}
+.photo-preview-wrap{display:none;position:relative;margin-bottom:14px;border-radius:12px;overflow:hidden;}
+.photo-preview-wrap.has-photo{display:block;}
+.photo-preview{width:100%;max-height:160px;object-fit:cover;border-radius:12px;}
+.photo-remove{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);border:none;color:white;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.unit-toggle{display:flex;background:rgba(168,85,247,0.06);border-radius:10px;padding:3px;margin-bottom:14px;border:1px solid var(--border2);}
+.unit-btn{flex:1;padding:8px;text-align:center;font-size:12px;font-family:'Outfit',sans-serif;font-weight:700;cursor:pointer;background:none;border:none;color:var(--muted);transition:all .2s;border-radius:8px;letter-spacing:0.5px;}
+.unit-btn.active{background:linear-gradient(135deg,var(--purple2),var(--purple));color:white;box-shadow:0 2px 10px var(--glow);}
+.gram-sec{display:none;}
+.gram-sec.show{display:block;}
+.gram-input-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.gram-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:28px;font-family:'Space Mono',monospace;color:var(--text);outline:none;text-align:center;font-weight:700;transition:all .2s;}
+.gram-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(168,85,247,0.15);}
+.gram-unit{font-size:14px;color:var(--muted);font-weight:600;}
+.gram-preview{background:rgba(168,85,247,0.06);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-around;}
+.gp-item{text-align:center;}
+.gp-val{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--purple3);}
+.gp-lbl{font-size:9px;color:var(--dimmed);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+.srv-sec{display:none;}
+.srv-sec.show{display:block;}
+.srv-lbl{font-size:11px;color:var(--dimmed);text-align:center;margin-bottom:8px;}
+.qty-row{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:14px;}
+.qty-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:rgba(168,85,247,0.1);color:var(--purple3);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-weight:bold;line-height:1;}
+.qty-btn:hover{background:var(--purple);color:white;}
+.qty-disp{font-family:'Space Mono',monospace;font-size:34px;color:var(--text);min-width:56px;text-align:center;font-weight:700;}
+.meal-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.meal-pick-btn{padding:11px;border-radius:10px;border:1px solid var(--border2);background:var(--card);color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.meal-pick-btn.sel,.meal-pick-btn:hover{background:linear-gradient(135deg,var(--purple2),var(--purple));border-color:var(--purple);color:white;box-shadow:0 0 12px var(--glow);}
+.add-confirm-btn{width:100%;background:linear-gradient(135deg,var(--purple2),var(--purple));border:none;color:white;padding:15px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:800;border-radius:14px;cursor:pointer;box-shadow:0 4px 20px var(--glow);transition:all .2s;}
+.add-confirm-btn:hover{transform:translateY(-1px);}
+
+/* ── LIGHTBOX ── */
+.lightbox{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.95);z-index:400;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:92vw;max-height:78vh;border-radius:14px;object-fit:contain;box-shadow:0 0 40px var(--glow);}
+.lb-close{background:rgba(168,85,247,0.12);border:1px solid var(--border);color:var(--purple3);padding:9px 24px;border-radius:20px;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:700;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:linear-gradient(135deg,var(--purple2),var(--purple));color:white;padding:10px 22px;border-radius:22px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:500;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px var(--glow);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* Steps input modal */
+.steps-modal{background:var(--bg3);width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px 18px 40px;animation:slideUp .25s ease;border:1px solid var(--border);border-bottom:none;}
+
+/* ── MEAL BUILDER ── */
+.mb-screen-wrap{padding:0 16px;}
+.meal-type-scroll{display:flex;gap:10px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;}
+.meal-type-scroll::-webkit-scrollbar{display:none;}
+.meal-type-chip{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:var(--card);border:1px solid var(--border2);border-radius:14px;
+  padding:12px 16px;cursor:pointer;transition:all .2s;min-width:70px;
+}
+.meal-type-chip.active{background:linear-gradient(135deg,var(--purple2),var(--purple));border-color:var(--purple);box-shadow:0 0 14px var(--glow);}
+.mtc-icon{font-size:26px;}
+.mtc-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.5px;}
+.meal-type-chip.active .mtc-label{color:white;}
+
+.builder-card{background:var(--card);border-radius:16px;border:1px solid var(--border2);margin-bottom:14px;overflow:hidden;}
+.builder-section-hdr{
+  padding:12px 14px;background:rgba(168,85,247,0.08);
+  border-bottom:1px solid var(--border2);
+  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--purple3);
+}
+.ingredient-row{
+  display:flex;align-items:center;gap:10px;padding:11px 14px;
+  border-bottom:1px solid rgba(168,85,247,0.06);cursor:pointer;transition:background .15s;
+}
+.ingredient-row:last-child{border-bottom:none;}
+.ingredient-row:active{background:rgba(168,85,247,0.06);}
+.ingredient-row.selected{background:rgba(168,85,247,0.08);}
+.ir-check{
+  width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all .2s;font-size:13px;
+}
+.ingredient-row.selected .ir-check{background:var(--purple);border-color:var(--purple);box-shadow:0 0 8px var(--glow);}
+.ir-emoji{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+.ir-info{flex:1;}
+.ir-name{font-size:13px;font-weight:600;color:var(--text);}
+.ir-sub{font-size:10px;color:var(--dimmed);margin-top:1px;}
+.ir-cal{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--purple3);}
+
+/* Compact floating total pill */
+.builder-total-bar{
+  position:fixed;bottom:82px;left:50%;transform:translateX(-50%);
+  z-index:40;width:calc(100% - 32px);max-width:448px;
+}
+/* Collapsed pill */
+.btb-pill{
+  background:linear-gradient(135deg,var(--purple2),var(--purple));
+  border-radius:50px;padding:10px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 4px 20px var(--glow);cursor:pointer;transition:all .2s;
+  border:none;width:100%;font-family:'Outfit',sans-serif;
+}
+.btb-pill:hover{box-shadow:0 6px 28px var(--glow);}
+.btb-pill-left{display:flex;align-items:center;gap:10px;}
+.btb-pill-icon{font-size:18px;}
+.btb-pill-cal{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;color:white;}
+.btb-pill-count{font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;}
+.btb-pill-right{display:flex;align-items:center;gap:8px;}
+.btb-expand-icon{font-size:14px;color:rgba(255,255,255,0.8);transition:transform .2s;}
+.btb-expand-icon.open{transform:rotate(180deg);}
+
+/* Expanded panel */
+.btb-panel{
+  background:linear-gradient(135deg,#1a1530,#221840);
+  border:1px solid var(--border);border-radius:16px;
+  padding:14px 16px;margin-bottom:8px;
+  display:none;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+}
+.btb-panel.open{display:block;}
+.btb-macros{display:flex;gap:0;border-bottom:1px solid var(--border2);padding-bottom:12px;margin-bottom:12px;}
+.btb-macro{flex:1;text-align:center;}
+.btb-macro+.btb-macro{border-left:1px solid var(--border2);}
+.btb-macro-val{font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--text);}
+.btb-macro-lbl{font-size:9px;color:var(--dimmed);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+.btb-ingredients{font-size:11px;color:var(--dimmed);margin-bottom:12px;line-height:1.6;}
+.btb-actions{display:flex;gap:8px;}
+.btb-log-btn{
+  flex:1;background:linear-gradient(135deg,var(--purple2),var(--purple));
+  border:none;color:white;padding:12px;font-size:12px;font-weight:800;
+  letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;
+  border-radius:12px;cursor:pointer;box-shadow:0 4px 16px var(--glow);transition:all .2s;
+}
+.btb-log-btn:hover{transform:translateY(-1px);}
+.btb-clear-btn{
+  background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);
+  color:#fb7185;padding:12px 16px;font-size:12px;font-weight:700;
+  font-family:'Outfit',sans-serif;border-radius:12px;cursor:pointer;transition:all .2s;
+}
+.btb-clear-btn:hover{background:rgba(244,63,94,0.18);}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.3);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- DASHBOARD SCREEN -->
+<div class="screen active" id="screen-home">
+  <div style="height:8px"></div>
+  <div class="dash-greeting" style="padding-bottom:16px;">
+    <div class="greeting-row">
+      <div>
+        <div class="greeting-text">☀️ Summer Goals</div>
+        <div class="greeting-sub">Eritrea Edition</div>
+      </div>
+      <div class="date-chip" id="datePill"></div>
+    </div>
+  </div>
+
+  <!-- Big calorie hero card -->
+  <div class="cal-hero">
+    <svg style="position:absolute;width:0;height:0"><defs><linearGradient id="rGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#7c3aed"/><stop offset="100%" style="stop-color:#e879f9"/></linearGradient></defs></svg>
+    <div class="cal-hero-top">
+      <div>
+        <div class="cal-hero-label">Calories Remaining</div>
+        <div class="cal-remaining" id="calRemaining">2000</div>
+        <div class="cal-remaining-lbl">of <span id="calGoalDisp">2000</span> goal</div>
+      </div>
+      <div class="cal-ring-wrap">
+        <svg class="cal-ring-svg" viewBox="0 0 72 72">
+          <circle class="cal-ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="cal-ring-fill" id="ringFill" cx="36" cy="36" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+        </svg>
+        <div class="cal-ring-center">
+          <div class="cal-ring-num" id="ringCal">0</div>
+          <div class="cal-ring-sub">eaten</div>
+        </div>
+      </div>
+    </div>
+    <!-- Progress bar -->
+    <div class="cal-bar-wrap">
+      <div class="cal-bar-labels">
+        <div class="cal-bar-label">0</div>
+        <div class="cal-bar-label" id="calBarPct">0%</div>
+        <div class="cal-bar-label" id="calGoalBarLbl">2000</div>
+      </div>
+      <div class="cal-progress-bar"><div class="cal-progress-fill" id="calProgressBar" style="width:0%"></div></div>
+    </div>
+    <!-- Stats row -->
+    <div class="cal-stats" style="margin-top:16px;">
+      <div class="cal-stat">
+        <div class="cal-stat-val" id="statEaten">0</div>
+        <div class="cal-stat-lbl">Eaten</div>
+      </div>
+      <div class="cal-stat">
+        <div class="cal-stat-val" id="statBurned">0</div>
+        <div class="cal-stat-lbl">Burned (steps)</div>
+      </div>
+      <div class="cal-stat">
+        <div class="cal-stat-val" id="statNet">0</div>
+        <div class="cal-stat-lbl">Net</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Macro cards -->
+  <div class="section-title" style="margin-top:4px;">Macros</div>
+  <div class="macro-cards">
+    <div class="macro-card">
+      <div class="mc-top">
+        <div class="mc-icon pr">💪</div>
+        <div class="mc-pct" id="pctPr">0%</div>
+      </div>
+      <div class="mc-val" id="valPr">0g</div>
+      <div class="mc-name">Protein</div>
+      <div class="mc-bar"><div class="mc-bar-fill pr" id="barPr" style="width:0%"></div></div>
+    </div>
+    <div class="macro-card">
+      <div class="mc-top">
+        <div class="mc-icon ca">⚡</div>
+        <div class="mc-pct" id="pctCa">0%</div>
+      </div>
+      <div class="mc-val" id="valCa">0g</div>
+      <div class="mc-name">Carbs</div>
+      <div class="mc-bar"><div class="mc-bar-fill ca" id="barCa" style="width:0%"></div></div>
+    </div>
+    <div class="macro-card">
+      <div class="mc-top">
+        <div class="mc-icon fa">🔥</div>
+        <div class="mc-pct" id="pctFa">0%</div>
+      </div>
+      <div class="mc-val" id="valFa">0g</div>
+      <div class="mc-name">Fat</div>
+      <div class="mc-bar"><div class="mc-bar-fill fa" id="barFa" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Steps card -->
+  <div class="section-title">Activity</div>
+  <div class="steps-card">
+    <div class="steps-icon-wrap">🦶</div>
+    <div class="steps-info">
+      <div style="display:flex;align-items:baseline;gap:6px;">
+        <div class="steps-val" id="stepsVal">0</div>
+        <div style="font-size:11px;color:var(--dimmed);">/ <span id="stepsGoalLbl">10,000</span> steps</div>
+      </div>
+      <div class="steps-bar"><div class="steps-bar-fill" id="stepsBar" style="width:0%"></div></div>
+      <button class="steps-edit-btn" onclick="openStepsModal()">+ Log Steps</button>
+    </div>
+    <div class="steps-cals">
+      <div class="steps-cals-val" id="stepsCals">+0</div>
+      <div class="steps-cals-lbl">kcal bonus</div>
+    </div>
+  </div>
+
+  <!-- Meal log sections -->
+  <div class="section-title">Today's Meals</div>
+  <div class="meal-log-section" id="mealLogSection"></div>
+  <div style="height:8px;"></div>
+</div>
+
+<!-- LOG / SEARCH SCREEN -->
+<div class="screen" id="screen-log">
+  <div class="page-header">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div class="page-title">Add Food</div>
+        <div class="page-sub">Search our Eritrea-ready database</div>
+      </div>
+      <button onclick="openQuickAdd()" style="
+        background:linear-gradient(135deg,var(--purple2),var(--purple));
+        border:none;color:white;padding:8px 14px;border-radius:20px;
+        font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;
+        display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px var(--glow);
+        white-space:nowrap;flex-shrink:0;transition:all .2s;">
+        ＋ New Food
+      </button>
+    </div>
+  </div>
+  <div class="search-wrap" style="margin-top:12px;">
+    <div class="search-box">
+      <div class="search-icon">🔍</div>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search foods…" oninput="filterFoods()">
+    </div>
+  </div>
+  <div class="cat-scroll" id="catScroll"></div>
+  <div class="food-list" id="foodGrid"></div>
+</div>
+
+<!-- QUICK ADD FOOD MODAL -->
+<div class="overlay" id="quickAddModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">＋ New Food</div>
+    <div class="modal-sub" style="margin-bottom:16px;">Saved to your personal database</div>
+
+    <div style="display:flex;gap:10px;margin-bottom:13px;">
+      <div style="flex:1;">
+        <label class="f-label" style="display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--purple3);margin-bottom:6px;font-weight:700;">Food Name *</label>
+        <input class="f-input" id="qa-name" placeholder="e.g. Grilled tilapia" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;font-family:'Outfit',sans-serif;color:var(--text);outline:none;width:100%;transition:all .2s;">
+      </div>
+      <div style="width:80px;">
+        <label class="f-label" style="display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--purple3);margin-bottom:6px;font-weight:700;">Emoji</label>
+        <input class="f-input" id="qa-emoji" placeholder="🍽" maxlength="2" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:18px;font-family:'Outfit',sans-serif;color:var(--text);outline:none;width:100%;text-align:center;transition:all .2s;">
+      </div>
+    </div>
+
+    <!-- Calorie input big & prominent -->
+    <label class="f-label" style="display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--purple3);margin-bottom:6px;font-weight:700;">Calories per 100g *</label>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <input id="qa-cal" type="number" placeholder="0" oninput="updateQaPreview()" style="
+        flex:1;background:var(--card);border:2px solid var(--purple);border-radius:12px;
+        padding:12px;font-size:28px;font-family:'Space Mono',monospace;color:var(--purple3);
+        outline:none;text-align:center;font-weight:700;transition:all .2s;">
+      <div style="font-size:13px;color:var(--muted);font-weight:600;">kcal</div>
+    </div>
+
+    <!-- Macros row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div>
+        <label style="display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#93c5fd;margin-bottom:5px;font-weight:700;">Protein (g)</label>
+        <input id="qa-pr" type="number" placeholder="0" oninput="updateQaPreview()" style="width:100%;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.25);border-radius:10px;padding:10px;font-size:16px;font-family:'Space Mono',monospace;color:var(--text);outline:none;text-align:center;font-weight:700;">
+      </div>
+      <div>
+        <label style="display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#c084fc;margin-bottom:5px;font-weight:700;">Carbs (g)</label>
+        <input id="qa-ca" type="number" placeholder="0" oninput="updateQaPreview()" style="width:100%;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:10px;padding:10px;font-size:16px;font-family:'Space Mono',monospace;color:var(--text);outline:none;text-align:center;font-weight:700;">
+      </div>
+      <div>
+        <label style="display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#f0abfc;margin-bottom:5px;font-weight:700;">Fat (g)</label>
+        <input id="qa-fa" type="number" placeholder="0" oninput="updateQaPreview()" style="width:100%;background:rgba(232,121,249,0.08);border:1px solid rgba(232,121,249,0.25);border-radius:10px;padding:10px;font-size:16px;font-family:'Space Mono',monospace;color:var(--text);outline:none;text-align:center;font-weight:700;">
+      </div>
+    </div>
+
+    <!-- Live preview -->
+    <div id="qaPreview" style="background:rgba(168,85,247,0.07);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-around;">
+      <div style="text-align:center;"><div id="qp-cal" style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--purple3);">0</div><div style="font-size:9px;color:var(--dimmed);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">kcal</div></div>
+      <div style="text-align:center;"><div id="qp-pr" style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:#93c5fd;">0g</div><div style="font-size:9px;color:var(--dimmed);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">protein</div></div>
+      <div style="text-align:center;"><div id="qp-ca" style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:#c084fc;">0g</div><div style="font-size:9px;color:var(--dimmed);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">carbs</div></div>
+      <div style="text-align:center;"><div id="qp-fa" style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:#f0abfc;">0g</div><div style="font-size:9px;color:var(--dimmed);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">fat</div></div>
+    </div>
+
+    <!-- Category -->
+    <label style="display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--purple3);margin-bottom:6px;font-weight:700;">Category</label>
+    <select id="qa-cat" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;font-family:'Outfit',sans-serif;color:var(--text);outline:none;margin-bottom:16px;">
+      <option>Eritrean</option><option>Restaurant</option><option>Basics</option>
+      <option>Fresh Juices</option><option>Toast</option><option>Eggs</option>
+      <option>Cheese</option><option>Snacks</option><option>Drinks</option><option>Other</option>
+    </select>
+
+    <button onclick="saveQuickAdd()" style="
+      width:100%;background:linear-gradient(135deg,var(--purple2),var(--purple));
+      border:none;color:white;padding:14px;font-size:13px;letter-spacing:1.5px;
+      text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:800;
+      border-radius:12px;cursor:pointer;box-shadow:0 4px 20px var(--glow);transition:all .2s;">
+      Save & Add to Database
+    </button>
+  </div>
+</div>
+
+<!-- WEEKLY SCREEN -->
+<div class="screen" id="screen-weekly">
+  <div class="page-header">
+    <div class="page-title">Weekly Overview</div>
+    <div class="page-sub">Last 7 days</div>
+  </div>
+  <div style="padding:16px 0 0;">
+    <div class="weekly-wrap">
+      <div class="week-summary-card">
+        <div class="wsc-title">Calories This Week</div>
+        <div class="week-bars" id="weekBars"></div>
+        <div style="display:flex;justify-content:space-around;" id="weekDayLabels"></div>
+      </div>
+      <div class="week-stats-row">
+        <div class="week-stat">
+          <div class="ws-val" id="wAvgCal">—</div>
+          <div class="ws-lbl">Avg Daily</div>
+        </div>
+        <div class="week-stat">
+          <div class="ws-val" id="wTotalCal">—</div>
+          <div class="ws-lbl">Total kcal</div>
+        </div>
+        <div class="week-stat">
+          <div class="ws-val" id="wGoalDays">—</div>
+          <div class="ws-lbl">On-Goal Days</div>
+        </div>
+      </div>
+      <div class="week-days-detail" id="weekDetail"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM FOOD SCREEN -->
+<div class="screen" id="screen-custom">
+  <div class="page-header">
+    <div class="page-title">Custom Food</div>
+    <div class="page-sub">Add anything not in the database</div>
+  </div>
+  <div style="padding:16px 0 0;">
+    <div class="custom-wrap">
+      <div class="f-group"><label class="f-label">Food Name</label><input class="f-input" id="cName" placeholder="e.g. Suwa local beer"></div>
+      <div class="f-group"><label class="f-label">Emoji</label><input class="f-input" id="cEmoji" placeholder="🍲" maxlength="2"></div>
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">Calories / 100g</label><input class="f-input" id="cCal" type="number" placeholder="150"></div>
+        <div class="f-group"><label class="f-label">Protein / 100g</label><input class="f-input" id="cPr" type="number" placeholder="8"></div>
+      </div>
+      <div class="f-row">
+        <div class="f-group"><label class="f-label">Carbs / 100g</label><input class="f-input" id="cCa2" type="number" placeholder="25"></div>
+        <div class="f-group"><label class="f-label">Fat / 100g</label><input class="f-input" id="cFa" type="number" placeholder="4"></div>
+      </div>
+      <div class="f-group">
+        <label class="f-label">Category</label>
+        <select class="f-input" id="cCat">
+          <option>Eritrean</option><option>Restaurant</option><option>Basics</option><option>Fresh Juices</option><option>Toast</option><option>Snacks</option><option>Other</option>
+        </select>
+      </div>
+      <button class="save-btn" onclick="saveCustomFood()">+ Save to My Foods</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div class="screen" id="screen-settings">
+  <div class="page-header">
+    <div class="page-title">Settings</div>
+    <div class="page-sub">Goals & Reminders</div>
+  </div>
+  <div style="padding:16px 0 0;">
+    <div class="settings-wrap">
+      <!-- Goals -->
+      <div class="settings-card">
+        <div class="sc-title">Daily Goals</div>
+        <div class="goal-inputs">
+          <div class="f-group"><label class="f-label">Calories</label><input class="f-input" id="gCal" type="number" placeholder="2000"></div>
+          <div class="f-group"><label class="f-label">Protein (g)</label><input class="f-input" id="gPr" type="number" placeholder="150"></div>
+          <div class="f-group"><label class="f-label">Carbs (g)</label><input class="f-input" id="gCa" type="number" placeholder="250"></div>
+          <div class="f-group"><label class="f-label">Fat (g)</label><input class="f-input" id="gFa" type="number" placeholder="65"></div>
+          <div class="f-group"><label class="f-label">Step Goal</label><input class="f-input" id="gSteps" type="number" placeholder="10000"></div>
+        </div>
+        <button class="save-btn" onclick="saveGoal()" style="margin-top:8px;">Save Goals</button>
+      </div>
+      <!-- Notifications -->
+      <div class="settings-card">
+        <div class="sc-title">Reminders</div>
+        <div class="notif-permission-banner" id="permBanner">
+          <div class="npb-icon">🔔</div>
+          <div class="npb-text">
+            <div class="npb-title">Enable Notifications</div>
+            <div class="npb-desc">Allow reminders for meals</div>
+          </div>
+          <button class="npb-btn" id="permBtn" onclick="requestPermission()">Allow</button>
+        </div>
+        <div class="notif-card">
+          <div class="notif-card-top">
+            <div class="notif-icon">🌅</div>
+            <div class="notif-info"><div class="notif-name">Breakfast</div><div class="notif-time">8:00 AM</div></div>
+            <label class="notif-toggle"><input type="checkbox" id="tog-breakfast" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-card-top">
+            <div class="notif-icon">☀️</div>
+            <div class="notif-info"><div class="notif-name">Lunch</div><div class="notif-time">1:00 PM</div></div>
+            <label class="notif-toggle"><input type="checkbox" id="tog-lunch" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-card-top">
+            <div class="notif-icon">🌆</div>
+            <div class="notif-info"><div class="notif-name">Dinner</div><div class="notif-time">7:00 PM</div></div>
+            <label class="notif-toggle"><input type="checkbox" id="tog-dinner" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-card-top">
+            <div class="notif-icon">🌙</div>
+            <div class="notif-info"><div class="notif-name">Daily Summary</div><div class="notif-time">9:00 PM</div></div>
+            <label class="notif-toggle"><input type="checkbox" id="tog-summary" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
+          </div>
+        </div>
+        <button class="test-notif-btn" onclick="sendTestNotif()">🔔 Send Test Notification</button>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div class="settings-card">
+        <div class="sc-title">Backup & Restore</div>
+
+        <div style="background:rgba(168,85,247,0.06);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="font-size:22px;">💾</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Export Backup</div>
+              <div style="font-size:11px;color:var(--dimmed);margin-top:1px;">Saves all your data as a file</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--dimmed);margin-bottom:10px;line-height:1.6;">
+            Includes your food log, custom foods, goals, weekly history, and settings. Save it to Files, iCloud, or email it to yourself.
+          </div>
+          <button onclick="exportBackup()" style="
+            width:100%;background:linear-gradient(135deg,var(--purple2),var(--purple));
+            border:none;color:white;padding:12px;font-size:12px;font-weight:800;
+            letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;
+            border-radius:10px;cursor:pointer;box-shadow:0 4px 14px var(--glow);transition:all .2s;">
+            ⬇ Export Backup
+          </button>
+        </div>
+
+        <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.18);border-radius:12px;padding:14px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="font-size:22px;">📂</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Import Backup</div>
+              <div style="font-size:11px;color:var(--dimmed);margin-top:1px;">Restore from a saved backup file</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:rgba(244,63,94,0.8);margin-bottom:10px;line-height:1.6;">
+            ⚠ This will replace all current data with the backup. Make sure to export first if you want to keep today's data.
+          </div>
+          <button onclick="document.getElementById('importFileInput').click()" style="
+            width:100%;background:rgba(34,197,94,0.12);
+            border:1px solid rgba(34,197,94,0.3);color:#4ade80;padding:12px;font-size:12px;font-weight:800;
+            letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;
+            border-radius:10px;cursor:pointer;transition:all .2s;">
+            ⬆ Import Backup
+          </button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importBackup(event)">
+        </div>
+
+        <div style="background:rgba(244,63,94,0.05);border:1px solid rgba(244,63,94,0.15);border-radius:12px;padding:14px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <div style="font-size:22px;">🗑</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Reset All Data</div>
+              <div style="font-size:11px;color:var(--dimmed);margin-top:1px;">Wipe everything and start fresh</div>
+            </div>
+          </div>
+          <button onclick="resetAllData()" style="
+            width:100%;background:rgba(244,63,94,0.1);
+            border:1px solid rgba(244,63,94,0.3);color:#fb7185;padding:12px;font-size:12px;font-weight:800;
+            letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;
+            border-radius:10px;cursor:pointer;transition:all .2s;">
+            Reset Everything
+          </button>
+        </div>
+
+        <!-- Last backup info -->
+        <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--dimmed);" id="lastBackupInfo"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MEAL BUILDER SCREEN -->
+<div class="screen" id="screen-builder">
+  <div class="page-header">
+    <div class="page-title">🍽 Meal Builder</div>
+    <div class="page-sub">Pick a base then tap ingredients</div>
+  </div>
+
+  <!-- Meal type selector -->
+  <div class="meal-type-scroll" id="mealTypeScroll"></div>
+
+  <!-- Ingredient sections -->
+  <div class="mb-screen-wrap" id="builderSections"></div>
+
+  <!-- Compact floating total pill -->
+  <div class="builder-total-bar" id="builderTotalBar">
+    <!-- Expanded panel (shown above pill) -->
+    <div class="btb-panel" id="btbPanel">
+      <div class="btb-macros">
+        <div class="btb-macro"><div class="btb-macro-val" id="btbPr">0g</div><div class="btb-macro-lbl">Protein</div></div>
+        <div class="btb-macro"><div class="btb-macro-val" id="btbCa">0g</div><div class="btb-macro-lbl">Carbs</div></div>
+        <div class="btb-macro"><div class="btb-macro-val" id="btbFa">0g</div><div class="btb-macro-lbl">Fat</div></div>
+      </div>
+      <div class="btb-ingredients" id="btbIngredients">No ingredients selected</div>
+      <div class="btb-actions">
+        <button class="btb-log-btn" onclick="logBuilderMeal()">+ Log This Meal</button>
+        <button class="btb-clear-btn" onclick="clearBuilder()">Clear</button>
+      </div>
+    </div>
+    <!-- Collapsed pill (always visible) -->
+    <button class="btb-pill" onclick="toggleBtbPanel()">
+      <div class="btb-pill-left">
+        <span class="btb-pill-icon">🍽</span>
+        <span class="btb-pill-cal" id="btbCal">0 kcal</span>
+        <span class="btb-pill-count" id="btbCount">0 items</span>
+      </div>
+      <div class="btb-pill-right">
+        <span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;">View & Log</span>
+        <span class="btb-expand-icon" id="btbExpandIcon">▲</span>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="showScreen('home',this)" id="nav-home">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Home</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('log',this)" id="nav-log">
+    <span class="nav-icon">🔍</span>
+    <span class="nav-label">Foods</span>
+  </button>
+  <button class="nav-fab" onclick="showScreen('builder',document.getElementById('nav-builder'));document.getElementById('nav-builder').classList.add('active')">
+    <div class="fab-circle">🍽</div>
+    <span class="nav-fab-label">Build</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('weekly',this);renderWeekly()" id="nav-weekly">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Weekly</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('settings',this)" id="nav-settings">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">Settings</span>
+  </button>
+</nav>
+<!-- hidden builder nav ref -->
+<button id="nav-builder" style="display:none"></button>
+
+<!-- ADD FOOD MODAL -->
+<div class="overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="mTitle">Add to Meal</div>
+    <div class="modal-sub" id="mSub"></div>
+    <div class="photo-preview-wrap" id="photoWrap">
+      <img class="photo-preview" id="photoPreview" src="" alt="">
+      <button class="photo-remove" onclick="removePhoto()">×</button>
+    </div>
+    <div class="photo-row">
+      <button class="photo-btn" onclick="document.getElementById('camInput').click()"><span class="photo-btn-icon">📷</span>Camera</button>
+      <button class="photo-btn" onclick="document.getElementById('libInput').click()"><span class="photo-btn-icon">🖼</span>Library</button>
+    </div>
+    <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+    <input type="file" id="libInput" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+    <div class="unit-toggle">
+      <button class="unit-btn active" id="btnG" onclick="setUnit('g')">⚖ Grams</button>
+      <button class="unit-btn" id="btnS" onclick="setUnit('s')">🍽 Servings</button>
+    </div>
+    <div class="gram-sec show" id="gramSec">
+      <div class="gram-input-row">
+        <input class="gram-input" id="gramInput" type="number" value="100" min="1" oninput="updatePreview()">
+        <div class="gram-unit">grams</div>
+      </div>
+      <div class="gram-preview">
+        <div class="gp-item"><div class="gp-val" id="gpCal">—</div><div class="gp-lbl">kcal</div></div>
+        <div class="gp-item"><div class="gp-val" id="gpPr">—</div><div class="gp-lbl">protein</div></div>
+        <div class="gp-item"><div class="gp-val" id="gpCa">—</div><div class="gp-lbl">carbs</div></div>
+        <div class="gp-item"><div class="gp-val" id="gpFa">—</div><div class="gp-lbl">fat</div></div>
+      </div>
+    </div>
+    <div class="srv-sec" id="srvSec">
+      <div class="srv-lbl" id="srvNote">1 serving = 100g</div>
+      <div class="qty-row">
+        <button class="qty-btn" onclick="changeSrv(-0.5)">−</button>
+        <div class="qty-disp" id="srvDisp">1</div>
+        <button class="qty-btn" onclick="changeSrv(0.5)">+</button>
+      </div>
+    </div>
+    <div class="meal-picker" id="mealPicker"></div>
+    <button class="add-confirm-btn" onclick="confirmAdd()">Add to Log</button>
+  </div>
+</div>
+
+<!-- STEPS MODAL -->
+<div class="overlay" id="stepsModal">
+  <div class="steps-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Log Steps</div>
+    <div class="modal-sub" style="margin-bottom:16px;">Steps burned ≈ 0.04 kcal each</div>
+    <div class="gram-input-row">
+      <input class="gram-input" id="stepsInput" type="number" placeholder="8000" min="0">
+      <div class="gram-unit">steps</div>
+    </div>
+    <button class="add-confirm-btn" onclick="saveSteps()">Save Steps</button>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="document.getElementById('lightbox').classList.remove('open')">
+  <img id="lbImg" src="" alt="">
+  <button class="lb-close">Tap to close</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DB = [
+  // INJERA
+  {id:1, emoji:'🫓',name:'Injera (100% teff)',        cat:'Eritrean',cal:130,p:5, c:25,f:1, srv:200,desc:'Per 100g · 1 large injera ≈200g'},
+  {id:2, emoji:'🫓',name:'Injera (mixed flour)',       cat:'Eritrean',cal:145,p:4, c:28,f:2, srv:200,desc:'Per 100g · wheat/teff blend, common in restaurants'},
+
+  // TSEBHI (STEWS)
+  {id:3, emoji:'🥩',name:'Tsebhi Zigni – beef',        cat:'Eritrean',cal:158,p:14,c:6, f:9, srv:200,desc:'Per 100g · spicy berbere beef stew'},
+  {id:4, emoji:'🍗',name:'Tsebhi Derho – chicken',     cat:'Eritrean',cal:145,p:16,c:5, f:7, srv:200,desc:'Per 100g · chicken stew with hard-boiled egg'},
+  {id:5, emoji:'🐑',name:'Tsebhi Bkri – goat',         cat:'Eritrean',cal:152,p:15,c:5, f:8, srv:200,desc:'Per 100g · slow-cooked goat stew'},
+  {id:6, emoji:'🫘',name:'Tsebhi Ades – red lentils',  cat:'Eritrean',cal:116,p:7, c:16,f:4, srv:200,desc:'Per 100g · red lentil & berbere stew (misir wot style)'},
+  {id:7, emoji:'🧆',name:'Tsebhi Shiro',               cat:'Eritrean',cal:130,p:8, c:14,f:5, srv:200,desc:'Per 100g · chickpea flour stew, thick & spiced'},
+  {id:8, emoji:'🥬',name:'Hamli – sautéed greens',     cat:'Eritrean',cal:75, p:3, c:8, f:4, srv:150,desc:'Per 100g · collard greens w/ garlic & oil'},
+  {id:9, emoji:'🥣',name:'Alicha Birsen',              cat:'Eritrean',cal:105,p:5, c:16,f:3, srv:200,desc:'Per 100g · mild lentil, potato & vegetable stew'},
+  {id:10,emoji:'🫛',name:'Hilbet',                     cat:'Eritrean',cal:118,p:8, c:15,f:3, srv:100,desc:'Per 100g · lentil & faba bean paste'},
+  {id:11,emoji:'🍅',name:'Silsi Tsebhi – tomato stew', cat:'Eritrean',cal:70, p:2, c:9, f:3, srv:150,desc:'Per 100g · berbere tomato sauce stew'},
+  {id:12,emoji:'🥦',name:'Alicha – mild veg stew',     cat:'Eritrean',cal:85, p:3, c:12,f:3, srv:200,desc:'Per 100g · turmeric cabbage & carrots'},
+  {id:13,emoji:'🫘',name:'Kik Alicha – split peas',    cat:'Eritrean',cal:110,p:7, c:17,f:2, srv:200,desc:'Per 100g · yellow split pea mild stew'},
+
+  // MEAT DISHES
+  {id:14,emoji:'🥩',name:'Qulwa / Tibsi – beef',       cat:'Eritrean',cal:210,p:22,c:3, f:13,srv:150,desc:'Per 100g · pan-fried beef & caramelised onions'},
+  {id:15,emoji:'🍗',name:'Qulwa / Tibsi – chicken',    cat:'Eritrean',cal:175,p:23,c:3, f:8, srv:150,desc:'Per 100g · pan-fried chicken & onions'},
+  {id:16,emoji:'🐟',name:'Agame – spiced fish stew',   cat:'Eritrean',cal:130,p:18,c:5, f:5, srv:200,desc:'Per 100g · Massawa coastal fish in berbere'},
+  {id:17,emoji:'🍖',name:'Kikil – lamb bone soup',     cat:'Eritrean',cal:140,p:14,c:4, f:8, srv:300,desc:'Per 100g · slow-cooked lamb & vegetables'},
+
+  // BREAKFAST
+  {id:18,emoji:'🫘',name:'Shahan Ful',                 cat:'Eritrean',cal:142,p:8, c:20,f:4, srv:200,desc:'Per 100g · fava beans, berbere, tomato, lemon & oil'},
+  {id:19,emoji:'🥣',name:"Ga'at / Genfo",              cat:'Eritrean',cal:155,p:4, c:28,f:4, srv:200,desc:'Per 100g · barley porridge with spiced butter well'},
+  {id:20,emoji:'🥚',name:'Fata',                       cat:'Eritrean',cal:185,p:9, c:20,f:8, srv:200,desc:'Per 100g · bread pieces with egg, tomato & onion'},
+  {id:21,emoji:'🧀',name:'Ayib – fresh cheese',        cat:'Eritrean',cal:98, p:11,c:2, f:5, srv:80, desc:'Per 100g · Eritrean fresh cottage cheese'},
+
+  // BREAD
+  {id:22,emoji:'🍞',name:'Himbasha',                   cat:'Eritrean',cal:290,p:7, c:52,f:6, srv:100,desc:'Per 100g · sweet spiced celebration flatbread'},
+  {id:23,emoji:'🍞',name:'Tayta – fried flatbread',    cat:'Eritrean',cal:310,p:7, c:48,f:11,srv:80, desc:'Per 100g · deep-fried dough bread'},
+  {id:24,emoji:'🫓',name:'Kisra – sorghum flatbread',  cat:'Eritrean',cal:120,p:4, c:24,f:1, srv:100,desc:'Per 100g · thin sorghum pancake-bread'},
+
+  // RESTAURANT: PIZZA
+  {id:25,emoji:'🍕',name:'Pizza – Margherita',         cat:'Restaurant',cal:250,p:11,c:32,f:9, srv:100,desc:'Per 100g · ~1 slice ≈100g'},
+  {id:26,emoji:'🍕',name:'Pizza – Pepperoni',          cat:'Restaurant',cal:298,p:13,c:31,f:13,srv:100,desc:'Per 100g · ~1 slice ≈100g'},
+  {id:27,emoji:'🍕',name:'Pizza – Vegetable',          cat:'Restaurant',cal:230,p:10,c:30,f:8, srv:100,desc:'Per 100g · mixed veg topping'},
+  {id:28,emoji:'🍕',name:'Pizza – thick crust',        cat:'Restaurant',cal:270,p:12,c:38,f:8, srv:150,desc:'Per 100g · ~1.5 slices average restaurant'},
+
+  // RESTAURANT: BURGERS
+  {id:29,emoji:'🍔',name:'Beef burger',                cat:'Restaurant',cal:265,p:15,c:24,f:12,srv:150,desc:'Per 100g · bun + patty + basic toppings'},
+  {id:30,emoji:'🍔',name:'Chicken burger',             cat:'Restaurant',cal:240,p:16,c:23,f:10,srv:150,desc:'Per 100g · grilled or crispy chicken fillet'},
+  {id:31,emoji:'🍔',name:'Double beef burger',         cat:'Restaurant',cal:295,p:18,c:22,f:16,srv:200,desc:'Per 100g · double patty with cheese'},
+  {id:32,emoji:'🍟',name:'French fries',               cat:'Restaurant',cal:312,p:3, c:41,f:15,srv:100,desc:'Per 100g · standard restaurant portion'},
+
+  // RESTAURANT: FISH & SEAFOOD
+  {id:33,emoji:'🐟',name:'Grilled whole fish',         cat:'Restaurant',cal:135,p:22,c:0, f:5, srv:250,desc:'Per 100g · tilapia or grouper, Massawa-style'},
+  {id:34,emoji:'🐟',name:'Fried fish fillet',          cat:'Restaurant',cal:205,p:18,c:8, f:12,srv:150,desc:'Per 100g · battered and fried'},
+  {id:35,emoji:'🦐',name:'Grilled shrimp',             cat:'Restaurant',cal:105,p:20,c:1, f:2, srv:150,desc:'Per 100g · coastal grilled prawns'},
+  {id:36,emoji:'🐟',name:'Fish tibs – sautéed',        cat:'Restaurant',cal:155,p:19,c:4, f:7, srv:150,desc:'Per 100g · pan-fried with berbere & onion'},
+
+  // RESTAURANT: SIDES
+  {id:37,emoji:'🍚',name:'Steamed rice',               cat:'Restaurant',cal:130,p:3, c:28,f:0, srv:150,desc:'Per 100g · cooked white rice'},
+  {id:38,emoji:'🥗',name:'Side salad',                 cat:'Restaurant',cal:45, p:2, c:7, f:2, srv:100,desc:'Per 100g · tomato, cucumber, onion'},
+  {id:39,emoji:'🍳',name:'Fried egg',                  cat:'Restaurant',cal:190,p:14,c:1, f:15,srv:50, desc:'Per 100g · fried in oil'},
+  {id:40,emoji:'🧀',name:'Cheese (sliced)',            cat:'Restaurant',cal:350,p:22,c:2, f:28,srv:30, desc:'Per 100g · burger/sandwich cheese'},
+
+  // DRINKS (per 100ml)
+  {id:41,emoji:'☕',name:'Buna – Eritrean coffee',     cat:'Drinks',    cal:5,  p:0, c:0, f:0, srv:80, desc:'Per 100ml · black, small ceremonial cup'},
+  {id:42,emoji:'🫖',name:'Shai – spiced tea',          cat:'Drinks',    cal:30, p:0, c:7, f:0, srv:200,desc:'Per 100ml · with sugar, common after meals'},
+  {id:43,emoji:'🥛',name:'Fresh whole milk',           cat:'Drinks',    cal:61, p:3, c:5, f:3, srv:250,desc:'Per 100ml'},
+  {id:44,emoji:'🧃',name:'Fresh orange juice',         cat:'Drinks',    cal:45, p:1, c:10,f:0, srv:250,desc:'Per 100ml · no added sugar'},
+  {id:45,emoji:'💧',name:'Water',                      cat:'Drinks',    cal:0,  p:0, c:0, f:0, srv:500,desc:'Zero calories'},
+  {id:46,emoji:'🍺',name:'Suwa – fermented grain beer',cat:'Drinks',    cal:40, p:0, c:4, f:0, srv:300,desc:'Per 100ml · traditional Eritrean beer'},
+  {id:47,emoji:'🥤',name:'Soda / cola',                cat:'Drinks',    cal:42, p:0, c:11,f:0, srv:330,desc:'Per 100ml · regular soft drink'},
+  {id:48,emoji:'🧃',name:'Mango juice / smoothie',     cat:'Drinks',    cal:60, p:1, c:15,f:0, srv:300,desc:'Per 100ml · fresh or packaged'},
+
+  // SNACKS & FRUIT
+  {id:49,emoji:'🌰',name:'Roasted nuts & seeds',       cat:'Snacks',    cal:580,p:20,c:20,f:50,srv:30, desc:'Per 100g · mixed unsalted'},
+  {id:50,emoji:'🍌',name:'Banana',                     cat:'Snacks',    cal:89, p:1, c:23,f:0, srv:120,desc:'Per 100g · medium banana'},
+  {id:51,emoji:'🥭',name:'Mango',                      cat:'Snacks',    cal:60, p:1, c:15,f:0, srv:200,desc:'Per 100g · widely available in Eritrea'},
+  {id:52,emoji:'🍋',name:'Orange / citrus',            cat:'Snacks',    cal:47, p:1, c:12,f:0, srv:130,desc:'Per 100g'},
+  {id:53,emoji:'🫓',name:'Plain bread roll',           cat:'Snacks',    cal:270,p:8, c:50,f:4, srv:80, desc:'Per 100g · white roll'},
+  {id:54,emoji:'🥚',name:'Boiled egg',                 cat:'Snacks',    cal:155,p:13,c:1, f:11,srv:55, desc:'Per 100g · ~1 large egg'},
+
+  // ── BASICS: PROTEIN ──
+  {id:55, emoji:'🍗',name:'Chicken breast (cooked)',   cat:'Basics',cal:165,p:31,c:0, f:4, srv:150,desc:'Per 100g · grilled, no skin'},
+  {id:56, emoji:'🍗',name:'Chicken breast (raw)',      cat:'Basics',cal:120,p:23,c:0, f:2, srv:150,desc:'Per 100g · raw boneless skinless'},
+  {id:57, emoji:'🍗',name:'Chicken thigh (cooked)',    cat:'Basics',cal:209,p:26,c:0, f:11,srv:130,desc:'Per 100g · grilled, skin removed'},
+  {id:58, emoji:'🥩',name:'Beef mince (lean, cooked)', cat:'Basics',cal:218,p:26,c:0, f:13,srv:100,desc:'Per 100g · 5% fat, pan-cooked'},
+  {id:59, emoji:'🥩',name:'Beef steak (grilled)',      cat:'Basics',cal:207,p:28,c:0, f:10,srv:150,desc:'Per 100g · lean sirloin/ribeye'},
+  {id:60, emoji:'🥩',name:'Beef mince (regular)',      cat:'Basics',cal:254,p:24,c:0, f:17,srv:100,desc:'Per 100g · 20% fat, cooked'},
+  {id:61, emoji:'🐟',name:'Tuna (canned in water)',    cat:'Basics',cal:116,p:26,c:0, f:1, srv:85, desc:'Per 100g · drained'},
+  {id:62, emoji:'🐟',name:'Salmon (cooked)',           cat:'Basics',cal:208,p:25,c:0, f:12,srv:150,desc:'Per 100g · baked or grilled'},
+  {id:63, emoji:'🐟',name:'Tilapia (cooked)',          cat:'Basics',cal:128,p:26,c:0, f:3, srv:150,desc:'Per 100g · baked'},
+  {id:64, emoji:'🥚',name:'Whole egg (raw/boiled)',    cat:'Basics',cal:155,p:13,c:1, f:11,srv:55, desc:'Per 100g · 1 large egg ≈55g'},
+  {id:65, emoji:'🥚',name:'Egg whites only',           cat:'Basics',cal:52, p:11,c:1, f:0, srv:100,desc:'Per 100g · ~3 large whites'},
+  {id:66, emoji:'🧀',name:'Greek yogurt (plain)',      cat:'Basics',cal:97, p:9, c:4, f:5, srv:200,desc:'Per 100g · full fat'},
+  {id:67, emoji:'🧀',name:'Cottage cheese',            cat:'Basics',cal:98, p:11,c:3, f:4, srv:100,desc:'Per 100g · low fat'},
+  {id:68, emoji:'🥛',name:'Whole milk',                cat:'Basics',cal:61, p:3, c:5, f:3, srv:250,desc:'Per 100ml'},
+  {id:69, emoji:'🥛',name:'Skimmed milk',              cat:'Basics',cal:35, p:3, c:5, f:0, srv:250,desc:'Per 100ml'},
+
+  // ── BASICS: SEEDS & HEALTHY FATS ──
+  {id:70, emoji:'🌱',name:'Flaxseeds (ground)',        cat:'Basics',cal:534,p:18,c:29,f:42,srv:15, desc:'Per 100g · 1 tbsp ≈10g · high omega-3'},
+  {id:71, emoji:'🌱',name:'Chia seeds',                cat:'Basics',cal:486,p:17,c:42,f:31,srv:15, desc:'Per 100g · 1 tbsp ≈12g'},
+  {id:72, emoji:'🌻',name:'Sunflower seeds',           cat:'Basics',cal:584,p:21,c:20,f:51,srv:30, desc:'Per 100g · hulled, raw'},
+  {id:73, emoji:'🌿',name:'Hemp seeds',                cat:'Basics',cal:553,p:32,c:9, f:49,srv:30, desc:'Per 100g · shelled · great protein'},
+  {id:74, emoji:'🥜',name:'Almonds',                   cat:'Basics',cal:579,p:21,c:22,f:50,srv:30, desc:'Per 100g · raw unsalted'},
+  {id:75, emoji:'🥜',name:'Walnuts',                   cat:'Basics',cal:654,p:15,c:14,f:65,srv:30, desc:'Per 100g · raw'},
+  {id:76, emoji:'🥜',name:'Peanut butter',             cat:'Basics',cal:588,p:25,c:20,f:50,srv:32, desc:'Per 100g · 2 tbsp ≈32g'},
+  {id:77, emoji:'🫒',name:'Olive oil',                 cat:'Basics',cal:884,p:0, c:0, f:100,srv:14,desc:'Per 100ml · 1 tbsp ≈14ml'},
+  {id:78, emoji:'🥑',name:'Avocado',                   cat:'Basics',cal:160,p:2, c:9, f:15,srv:150,desc:'Per 100g · half avocado ≈100g'},
+
+  // ── BASICS: CARBS & GRAINS ──
+  {id:79, emoji:'🍚',name:'White rice (cooked)',       cat:'Basics',cal:130,p:3, c:28,f:0, srv:150,desc:'Per 100g · standard long grain'},
+  {id:80, emoji:'🍚',name:'Brown rice (cooked)',       cat:'Basics',cal:123,p:3, c:26,f:1, srv:150,desc:'Per 100g · higher fibre'},
+  {id:81, emoji:'🥣',name:'Oats (dry/rolled)',         cat:'Basics',cal:389,p:17,c:66,f:7, srv:40, desc:'Per 100g · 1 serving ≈40g dry'},
+  {id:82, emoji:'🥣',name:'Oatmeal (cooked)',          cat:'Basics',cal:71, p:2, c:12,f:1, srv:240,desc:'Per 100g · made with water'},
+  {id:83, emoji:'🍞',name:'White bread (slice)',       cat:'Basics',cal:265,p:9, c:49,f:3, srv:30, desc:'Per 100g · 1 slice ≈30g'},
+  {id:84, emoji:'🍞',name:'Wholemeal bread (slice)',   cat:'Basics',cal:247,p:13,c:41,f:4, srv:30, desc:'Per 100g · 1 slice ≈30g'},
+  {id:85, emoji:'🍝',name:'Pasta (cooked)',            cat:'Basics',cal:158,p:6, c:31,f:1, srv:180,desc:'Per 100g · white, al dente'},
+  {id:86, emoji:'🥔',name:'White potato (boiled)',     cat:'Basics',cal:87, p:2, c:20,f:0, srv:150,desc:'Per 100g · peeled, boiled'},
+  {id:87, emoji:'🍠',name:'Sweet potato (baked)',      cat:'Basics',cal:90, p:2, c:21,f:0, srv:130,desc:'Per 100g · with skin'},
+  {id:88, emoji:'🫘',name:'Chickpeas (cooked)',        cat:'Basics',cal:164,p:9, c:27,f:3, srv:100,desc:'Per 100g · boiled or canned'},
+  {id:89, emoji:'🫘',name:'Black beans (cooked)',      cat:'Basics',cal:132,p:9, c:24,f:1, srv:100,desc:'Per 100g'},
+  {id:90, emoji:'🫘',name:'Lentils (cooked)',          cat:'Basics',cal:116,p:9, c:20,f:0, srv:100,desc:'Per 100g · green or brown'},
+  {id:91, emoji:'🌽',name:'Corn / sweetcorn',          cat:'Basics',cal:86, p:3, c:19,f:1, srv:100,desc:'Per 100g · boiled kernels'},
+  {id:92, emoji:'🫓',name:'Pita bread',                cat:'Basics',cal:275,p:9, c:55,f:1, srv:60, desc:'Per 100g · 1 medium pita ≈60g'},
+
+  // ── BASICS: VEGETABLES ──
+  {id:93, emoji:'🥦',name:'Broccoli',                  cat:'Vegetables',cal:34, p:3, c:7, f:0, srv:100,desc:'Per 100g · raw or steamed'},
+  {id:94, emoji:'🥬',name:'Spinach (raw)',              cat:'Vegetables',cal:23, p:3, c:4, f:0, srv:100,desc:'Per 100g · fresh leaves'},
+  {id:95, emoji:'🥗',name:'Mixed green salad',         cat:'Vegetables',cal:20, p:2, c:3, f:0, srv:100,desc:'Per 100g · lettuce, rocket, mixed greens'},
+  {id:96, emoji:'🍅',name:'Tomato',                    cat:'Vegetables',cal:18, p:1, c:4, f:0, srv:120,desc:'Per 100g · raw, 1 medium ≈120g'},
+  {id:97, emoji:'🥒',name:'Cucumber',                  cat:'Vegetables',cal:16, p:1, c:4, f:0, srv:100,desc:'Per 100g · raw, with skin'},
+  {id:98, emoji:'🧅',name:'Onion (raw)',                cat:'Vegetables',cal:40, p:1, c:9, f:0, srv:80, desc:'Per 100g · 1 medium ≈80g'},
+  {id:99, emoji:'🧄',name:'Garlic',                    cat:'Vegetables',cal:149,p:6, c:33,f:1, srv:5,  desc:'Per 100g · 1 clove ≈5g'},
+  {id:100,emoji:'🥕',name:'Carrot (raw)',               cat:'Vegetables',cal:41, p:1, c:10,f:0, srv:100,desc:'Per 100g · 1 medium carrot'},
+  {id:101,emoji:'🫑',name:'Bell pepper',                cat:'Vegetables',cal:31, p:1, c:7, f:0, srv:120,desc:'Per 100g · any colour, raw'},
+  {id:102,emoji:'🥬',name:'Kale (raw)',                 cat:'Vegetables',cal:49, p:4, c:9, f:1, srv:67, desc:'Per 100g · chopped'},
+  {id:103,emoji:'🥦',name:'Cauliflower',               cat:'Vegetables',cal:25, p:2, c:5, f:0, srv:100,desc:'Per 100g · raw or steamed'},
+  {id:104,emoji:'🍆',name:'Aubergine / eggplant',      cat:'Vegetables',cal:25, p:1, c:6, f:0, srv:100,desc:'Per 100g · raw'},
+  {id:105,emoji:'🥗',name:'Caesar salad (no dressing)',cat:'Vegetables',cal:36, p:3, c:4, f:1, srv:100,desc:'Per 100g · romaine + croutons, no dressing'},
+  {id:106,emoji:'🥗',name:'Caesar dressing',           cat:'Vegetables',cal:340,p:3, c:7, f:34,srv:30, desc:'Per 100g · 2 tbsp ≈30g'},
+  {id:107,emoji:'🫛',name:'Green beans',               cat:'Vegetables',cal:31, p:2, c:7, f:0, srv:100,desc:'Per 100g · boiled'},
+  {id:108,emoji:'🌿',name:'Fresh herbs (parsley/coriander)',cat:'Vegetables',cal:36,p:3,c:6,f:1,srv:10,desc:'Per 100g · 1 tbsp ≈3g'},
+  {id:109,emoji:'🥑',name:'Avocado (as veg)',          cat:'Vegetables',cal:160,p:2, c:9, f:15,srv:75, desc:'Per 100g · half ≈75g'},
+
+  // ── BASICS: FRUIT ──
+  {id:110,emoji:'🍎',name:'Apple',                     cat:'Fruit',cal:52, p:0, c:14,f:0, srv:180,desc:'Per 100g · 1 medium ≈180g'},
+  {id:111,emoji:'🍊',name:'Orange',                    cat:'Fruit',cal:47, p:1, c:12,f:0, srv:130,desc:'Per 100g · 1 medium ≈130g'},
+  {id:112,emoji:'🍇',name:'Grapes',                    cat:'Fruit',cal:69, p:1, c:18,f:0, srv:100,desc:'Per 100g · seedless'},
+  {id:113,emoji:'🍓',name:'Strawberries',              cat:'Fruit',cal:32, p:1, c:8, f:0, srv:100,desc:'Per 100g'},
+  {id:114,emoji:'🫐',name:'Blueberries',               cat:'Fruit',cal:57, p:1, c:14,f:0, srv:100,desc:'Per 100g'},
+  {id:115,emoji:'🍉',name:'Watermelon',                cat:'Fruit',cal:30, p:1, c:8, f:0, srv:200,desc:'Per 100g · slice ≈200g'},
+  {id:116,emoji:'🍍',name:'Pineapple',                 cat:'Fruit',cal:50, p:1, c:13,f:0, srv:165,desc:'Per 100g · fresh'},
+  {id:117,emoji:'🍑',name:'Peach',                     cat:'Fruit',cal:39, p:1, c:10,f:0, srv:150,desc:'Per 100g · 1 medium ≈150g'},
+  {id:118,emoji:'🍒',name:'Dates (dried)',             cat:'Fruit',cal:282,p:2, c:75,f:0, srv:24, desc:'Per 100g · 1 medjool date ≈24g'},
+  {id:130,emoji:'🌵',name:'Cactus fruit (prickly pear)',cat:'Fruit',cal:41, p:1, c:10,f:1, srv:103,desc:'Per 100g · 1 medium fruit ≈103g · common in Eritrea'},
+
+  // ── BASICS: DAIRY & EGGS ──
+  {id:119,emoji:'🧀',name:'Cheddar cheese',            cat:'Basics',cal:402,p:25,c:1, f:33,srv:30, desc:'Per 100g · 1 slice ≈30g'},
+  {id:120,emoji:'🧈',name:'Butter',                    cat:'Basics',cal:717,p:1, c:0, f:81,srv:14, desc:'Per 100g · 1 tbsp ≈14g'},
+  {id:121,emoji:'🍳',name:'Scrambled eggs (2, w/butter)',cat:'Basics',cal:212,p:14,c:2, f:16,srv:120,desc:'Per 100g · ~120g total'},
+  {id:122,emoji:'🥚',name:'Fried egg (1)',             cat:'Basics',cal:196,p:14,c:0, f:15,srv:46, desc:'Per 100g · 1 egg ≈46g cooked'},
+
+  // ── BASICS: CONDIMENTS & EXTRAS ──
+  {id:123,emoji:'🍯',name:'Honey',                     cat:'Basics',cal:304,p:0, c:82,f:0, srv:21, desc:'Per 100g · 1 tbsp ≈21g'},
+  {id:124,emoji:'🧂',name:'Table salt',                cat:'Basics',cal:0,  p:0, c:0, f:0, srv:6,  desc:'Calories: 0 · just for tracking'},
+  {id:125,emoji:'🫙',name:'Tomato ketchup',            cat:'Basics',cal:112,p:1, c:28,f:0, srv:17, desc:'Per 100g · 1 tbsp ≈17g'},
+  {id:126,emoji:'🧴',name:'Mayonnaise',                cat:'Basics',cal:680,p:1, c:1, f:75,srv:15, desc:'Per 100g · 1 tbsp ≈15g'},
+  {id:127,emoji:'🫙',name:'Hummus',                    cat:'Basics',cal:177,p:8, c:14,f:10,srv:30, desc:'Per 100g · 2 tbsp ≈30g'},
+  {id:128,emoji:'🧴',name:'Soy sauce',                 cat:'Basics',cal:53, p:8, c:5, f:0, srv:15, desc:'Per 100ml · 1 tbsp ≈15ml · low sodium'},
+  {id:129,emoji:'🫙',name:'Protein powder (whey)',     cat:'Basics',cal:400,p:80,c:10,f:5, srv:30, desc:'Per 100g · 1 scoop ≈30g · varies by brand'},
+
+  // ── FRESH JUICES (single fruit, per 100ml) ──
+  {id:131,emoji:'🧃',name:'Fresh orange juice',        cat:'Fresh Juices',cal:45, p:1, c:10,f:0, srv:300,desc:'Per 100ml · freshly squeezed · 300ml glass'},
+  {id:132,emoji:'🧃',name:'Fresh mango juice',         cat:'Fresh Juices',cal:60, p:1, c:15,f:0, srv:300,desc:'Per 100ml · blended fresh mango · 300ml glass'},
+  {id:133,emoji:'🧃',name:'Fresh papaya juice',        cat:'Fresh Juices',cal:39, p:1, c:10,f:0, srv:300,desc:'Per 100ml · blended papaya · 300ml glass'},
+  {id:134,emoji:'🧃',name:'Fresh guava juice',         cat:'Fresh Juices',cal:60, p:1, c:14,f:1, srv:300,desc:'Per 100ml · blended guava · 300ml glass'},
+  {id:135,emoji:'🧃',name:'Fresh avocado juice',       cat:'Fresh Juices',cal:80, p:1, c:5, f:7, srv:300,desc:'Per 100ml · blended avocado w/ milk · common in Eritrea'},
+  {id:136,emoji:'🧃',name:'Fresh banana juice',        cat:'Fresh Juices',cal:89, p:1, c:23,f:0, srv:300,desc:'Per 100ml · blended banana + water/milk'},
+  {id:137,emoji:'🧃',name:'Fresh watermelon juice',    cat:'Fresh Juices',cal:30, p:1, c:8, f:0, srv:400,desc:'Per 100ml · fresh pressed · 400ml glass'},
+  {id:138,emoji:'🧃',name:'Fresh pineapple juice',     cat:'Fresh Juices',cal:50, p:0, c:13,f:0, srv:300,desc:'Per 100ml · freshly squeezed'},
+  {id:139,emoji:'🧃',name:'Fresh tamarind juice',      cat:'Fresh Juices',cal:36, p:0, c:9, f:0, srv:300,desc:'Per 100ml · diluted tamarind with sugar · popular in Eritrea'},
+  {id:140,emoji:'🧃',name:'Fresh lemon juice (sweetened)',cat:'Fresh Juices',cal:25,p:0,c:7, f:0, srv:300,desc:'Per 100ml · lemonade style'},
+  {id:141,emoji:'🧃',name:'Fresh carrot juice',        cat:'Fresh Juices',cal:40, p:1, c:9, f:0, srv:300,desc:'Per 100ml · freshly juiced carrots'},
+  {id:142,emoji:'🧃',name:'Fresh beetroot juice',      cat:'Fresh Juices',cal:43, p:2, c:10,f:0, srv:300,desc:'Per 100ml · freshly juiced'},
+  {id:143,emoji:'🧃',name:'Fresh passion fruit juice', cat:'Fresh Juices',cal:51, p:1, c:13,f:0, srv:250,desc:'Per 100ml · diluted fresh passion fruit'},
+  {id:144,emoji:'🧃',name:'Sugarcane juice',           cat:'Fresh Juices',cal:58, p:0, c:15,f:0, srv:300,desc:'Per 100ml · fresh pressed · street favourite in Eritrea'},
+
+  // ── FRESH JUICES (combos, per 100ml) ──
+  {id:145,emoji:'🥤',name:'Combo: Papaya + Orange',    cat:'Fresh Juices',cal:42, p:1, c:10,f:0, srv:300,desc:'Per 100ml · half papaya half orange blend · 300ml glass'},
+  {id:146,emoji:'🥤',name:'Combo: Mango + Pineapple',  cat:'Fresh Juices',cal:55, p:1, c:14,f:0, srv:300,desc:'Per 100ml · tropical blend · 300ml glass'},
+  {id:147,emoji:'🥤',name:'Combo: Mango + Banana',     cat:'Fresh Juices',cal:74, p:1, c:19,f:0, srv:300,desc:'Per 100ml · thick tropical smoothie'},
+  {id:148,emoji:'🥤',name:'Combo: Avocado + Banana',   cat:'Fresh Juices',cal:95, p:1, c:14,f:5, srv:300,desc:'Per 100ml · creamy filling blend'},
+  {id:149,emoji:'🥤',name:'Combo: Carrot + Orange',    cat:'Fresh Juices',cal:42, p:1, c:10,f:0, srv:300,desc:'Per 100ml · vitamin C boost blend'},
+  {id:150,emoji:'🥤',name:'Combo: Watermelon + Mint',  cat:'Fresh Juices',cal:28, p:1, c:7, f:0, srv:400,desc:'Per 100ml · refreshing light blend'},
+  {id:151,emoji:'🥤',name:'Combo: Guava + Mango',      cat:'Fresh Juices',cal:60, p:1, c:15,f:0, srv:300,desc:'Per 100ml · sweet tropical blend'},
+  {id:152,emoji:'🥤',name:'Combo: Papaya + Banana',    cat:'Fresh Juices',cal:64, p:1, c:16,f:0, srv:300,desc:'Per 100ml · smooth creamy blend'},
+  {id:153,emoji:'🥤',name:'Combo: Orange + Carrot + Ginger',cat:'Fresh Juices',cal:40,p:1,c:10,f:0,srv:300,desc:'Per 100ml · immunity shot blend'},
+  {id:154,emoji:'🥤',name:'Combo: Pineapple + Guava',  cat:'Fresh Juices',cal:55, p:1, c:14,f:0, srv:300,desc:'Per 100ml · East African favourite blend'},
+  {id:155,emoji:'🥤',name:'Combo: Avocado + Mango',    cat:'Fresh Juices',cal:70, p:1, c:10,f:4, srv:300,desc:'Per 100ml · rich creamy blend'},
+  {id:156,emoji:'🥤',name:'Combo: Beetroot + Orange',  cat:'Fresh Juices',cal:44, p:1, c:10,f:0, srv:300,desc:'Per 100ml · earthy citrus blend'},
+
+  // ── ERITREAN TOAST MEALS ──
+  // Components (log separately by grams for precision, or use the preset combos below)
+  {id:157,emoji:'🍞',name:'Toast bread (slice)',        cat:'Toast',cal:270,p:9, c:50,f:3, srv:30, desc:'Per 100g · 1 toast slice ≈30g · white sandwich bread'},
+  {id:158,emoji:'🥩',name:'Beef ham slices',           cat:'Toast',cal:185,p:19,c:2, f:11,srv:40, desc:'Per 100g · cured beef · typical 40g or 100g portion'},
+  {id:159,emoji:'🧀',name:'Cheese slice (processed)',  cat:'Toast',cal:320,p:19,c:8, f:24,srv:20, desc:'Per 100g · 1 slice ≈20g · common on Eritrean toast'},
+  {id:160,emoji:'🌶',name:'Awaze (spicy paste)',        cat:'Toast',cal:110,p:3, c:12,f:6, srv:15, desc:'Per 100g · Eritrean berbere-based hot condiment · 1 tbsp ≈15g'},
+  {id:161,emoji:'🧴',name:'Mayo (for toast)',           cat:'Toast',cal:680,p:1, c:1, f:75,srv:15, desc:'Per 100g · 1 tbsp ≈15g · used as base spread on toast'},
+
+  // Preset toast combos (whole meal calorie estimates, log as one item by grams)
+  {id:162,emoji:'🥪',name:'Toast – beef ham 40g + cheese + awaze',   cat:'Toast',cal:280,p:17,c:22,f:13,srv:110,desc:'~110g total · 2 toast slices + 40g beef ham + 1 cheese slice + 15g awaze'},
+  {id:163,emoji:'🥪',name:'Toast – beef ham 100g + cheese + awaze',  cat:'Toast',cal:360,p:28,c:22,f:17,srv:170,desc:'~170g total · 2 toast slices + 100g beef ham + 1 cheese slice + 15g awaze'},
+  {id:164,emoji:'🥪',name:'Toast – beef ham 40g + cheese + mayo',    cat:'Toast',cal:370,p:16,c:22,f:23,srv:110,desc:'~110g total · 2 toast slices + 40g beef ham + 1 cheese slice + 15g mayo'},
+  {id:165,emoji:'🥪',name:'Toast – beef ham 100g + cheese + mayo',   cat:'Toast',cal:450,p:27,c:22,f:27,srv:170,desc:'~170g total · 2 toast slices + 100g beef ham + 1 cheese slice + 15g mayo'},
+  {id:166,emoji:'🥪',name:'Toast – beef ham 40g + awaze (no cheese)',cat:'Toast',cal:215,p:14,c:20,f:8, srv:90, desc:'~90g total · 2 toast slices + 40g beef ham + 15g awaze'},
+  {id:167,emoji:'🥪',name:'Toast – beef ham 100g + awaze (no cheese)',cat:'Toast',cal:295,p:25,c:20,f:12,srv:150,desc:'~150g total · 2 toast slices + 100g beef ham + 15g awaze'},
+
+  // ── SHRIMP ──
+  {id:168,emoji:'🦐',name:'Shrimp – grilled',               cat:'Basics',cal:99, p:20,c:0, f:2, srv:150,desc:'Per 100g · plain grilled, no oil · high protein'},
+  {id:169,emoji:'🦐',name:'Shrimp – breaded & fried (egg + breadcrumb)',cat:'Basics',cal:242,p:16,c:17,f:12,srv:150,desc:'Per 100g · coated in egg wash + breadcrumbs, deep fried'},
+
+  // ── EGGS ──
+  {id:170,emoji:'🍳',name:'Omelette – plain (2 eggs)',       cat:'Eggs',cal:154,p:11,c:1, f:12,srv:110,desc:'Per 100g · 2 eggs cooked in butter, no filling · ~110g'},
+  {id:171,emoji:'🍳',name:'Omelette – cheese (2 eggs)',      cat:'Eggs',cal:195,p:14,c:1, f:15,srv:130,desc:'Per 100g · 2 eggs + cheddar filling · ~130g'},
+  {id:172,emoji:'🍳',name:'Omelette – veggie (2 eggs)',      cat:'Eggs',cal:142,p:11,c:4, f:10,srv:140,desc:'Per 100g · 2 eggs + pepper, onion, tomato · ~140g'},
+  {id:173,emoji:'🍳',name:'Omelette – ham & cheese (2 eggs)',cat:'Eggs',cal:210,p:16,c:2, f:16,srv:150,desc:'Per 100g · 2 eggs + beef ham + cheddar · ~150g'},
+  {id:174,emoji:'🥚',name:'Boiled egg – soft (1)',           cat:'Eggs',cal:155,p:13,c:1, f:11,srv:50, desc:'Per 100g · 1 large egg ≈50g · runny yolk'},
+  {id:175,emoji:'🥚',name:'Boiled egg – hard (1)',           cat:'Eggs',cal:155,p:13,c:1, f:11,srv:50, desc:'Per 100g · 1 large egg ≈50g · fully set yolk'},
+  {id:176,emoji:'🍳',name:'Fried egg – sunny side up (1)',   cat:'Eggs',cal:196,p:14,c:0, f:15,srv:46, desc:'Per 100g · 1 egg fried in oil, yolk runny'},
+  {id:177,emoji:'🍳',name:'Fried egg – over easy (1)',       cat:'Eggs',cal:196,p:14,c:0, f:15,srv:46, desc:'Per 100g · flipped once, yolk slightly set'},
+  {id:178,emoji:'🍳',name:'Scrambled eggs (2 eggs)',         cat:'Eggs',cal:212,p:14,c:2, f:16,srv:120,desc:'Per 100g · 2 eggs scrambled with butter & milk · ~120g'},
+  {id:179,emoji:'🍳',name:'Scrambled eggs – dry (2 eggs)',   cat:'Eggs',cal:180,p:13,c:1, f:14,srv:100,desc:'Per 100g · 2 eggs scrambled, no milk or butter'},
+  {id:180,emoji:'🥚',name:'Poached egg (1)',                 cat:'Eggs',cal:143,p:13,c:0, f:10,srv:50, desc:'Per 100g · 1 egg poached in water, no fat added'},
+  {id:181,emoji:'🍳',name:'Egg white omelette (3 whites)',   cat:'Eggs',cal:54, p:11,c:1, f:0, srv:100,desc:'Per 100g · 3 egg whites only, no yolk · very lean'},
+  {id:182,emoji:'🍳',name:'Turkish eggs (Çilbir style)',     cat:'Eggs',cal:185,p:12,c:4, f:13,srv:150,desc:'Per 100g · poached eggs on yogurt with spiced butter'},
+
+  // ── CHEESE ──
+  {id:183,emoji:'🧀',name:'Cheddar cheese',                  cat:'Cheese',cal:402,p:25,c:1, f:33,srv:30, desc:'Per 100g · 1 slice ≈30g · sharp & melty'},
+  {id:184,emoji:'🧀',name:'Mozzarella (fresh)',              cat:'Cheese',cal:280,p:22,c:2, f:21,srv:40, desc:'Per 100g · fresh ball, not shredded · great melted'},
+  {id:185,emoji:'🧀',name:'Mozzarella (shredded/low moisture)',cat:'Cheese',cal:318,p:25,c:2, f:22,srv:30, desc:'Per 100g · pizza-style shredded mozzarella'},
+  {id:186,emoji:'🧀',name:'Feta cheese',                     cat:'Cheese',cal:264,p:14,c:4, f:21,srv:40, desc:'Per 100g · crumbly Greek-style · salty'},
+  {id:187,emoji:'🧀',name:'Parmesan',                        cat:'Cheese',cal:431,p:38,c:4, f:29,srv:15, desc:'Per 100g · 1 tbsp grated ≈15g · very high protein'},
+  {id:188,emoji:'🧀',name:'Cream cheese',                    cat:'Cheese',cal:342,p:6, c:4, f:34,srv:30, desc:'Per 100g · 2 tbsp ≈30g · for spreads & sauces'},
+  {id:189,emoji:'🧀',name:'Processed cheese slice',          cat:'Cheese',cal:320,p:19,c:8, f:24,srv:20, desc:'Per 100g · 1 slice ≈20g · common on toast & burgers'},
+  {id:190,emoji:'🧀',name:'Gouda',                           cat:'Cheese',cal:356,p:25,c:2, f:27,srv:30, desc:'Per 100g · semi-hard, mild & creamy'},
+  {id:191,emoji:'🧀',name:'Cottage cheese (low fat)',        cat:'Cheese',cal:72, p:12,c:3, f:1, srv:100,desc:'Per 100g · high protein, very low fat · great snack'},
+  {id:192,emoji:'🧀',name:'Ricotta',                         cat:'Cheese',cal:174,p:11,c:3, f:13,srv:100,desc:'Per 100g · soft Italian cheese · used in cooking'},
+  {id:193,emoji:'🧀',name:'Halloumi (grilled)',              cat:'Cheese',cal:321,p:21,c:1, f:26,srv:80, desc:'Per 100g · squeaky grilled cheese · popular in Eritrea'},
+  {id:194,emoji:'🧀',name:'Brie / Camembert',               cat:'Cheese',cal:334,p:21,c:0, f:28,srv:40, desc:'Per 100g · soft French-style rind cheese'},
+];
+
+
+const MEALS = ['Breakfast','Lunch','Dinner','Snacks'];
+const MEAL_ICONS = {Breakfast:'🌅',Lunch:'☀️',Dinner:'🌆',Snacks:'🍿'};
+
+// ── SAFE STORAGE (Safari local file compatible) ──
+const _mem={};
+let _storageAvailable=null;
+function _checkStorage(){
+  if(_storageAvailable!==null) return _storageAvailable;
+  try{ localStorage.setItem('_sg_test','1'); localStorage.removeItem('_sg_test'); _storageAvailable=true; }
+  catch(e){ _storageAvailable=false; }
+  return _storageAvailable;
+}
+function storageGet(k){ if(_checkStorage()){ try{ return localStorage.getItem(k); }catch(e){} } return _mem[k]||null; }
+function storageSet(k,v){ if(_checkStorage()){ try{ localStorage.setItem(k,v); return; }catch(e){} } _mem[k]=v; }
+
+// ── STATE ──
+let state={
+  goal:{cal:2000,pr:150,ca:250,fa:65,steps:10000},
+  log:{Breakfast:[],Lunch:[],Dinner:[],Snacks:[]},
+  steps:0,
+  custom:[],
+  history:{}, // date -> {cal, pr, ca, fa}
+  date:new Date().toDateString()
+};
+
+function loadState(){
+  try{
+    const s=JSON.parse(storageGet('sg_state')||'null');
+    if(s){
+      // Save today to history before resetting if new day
+      if(s.date && s.date!==new Date().toDateString()){
+        if(!s.history) s.history={};
+        const t=calcTotals(s.log);
+        s.history[s.date]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
+        s.log={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
+        s.steps=0;
+        s.date=new Date().toDateString();
+      }
+      state={...state,...s};
+      if(!state.history) state.history={};
+    }
+  }catch(e){}
+}
+function saveState(){try{storageSet('sg_state',JSON.stringify(state));}catch(e){}}
+
+// ── SCREENS ──
+function showScreen(id, btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  // Scroll screen to top
+  const scr = document.getElementById('screen-'+id);
+  if(scr) scr.scrollTop=0;
+}
+
+function openFabAdd(){
+  showScreen('log', null);
+  document.getElementById('nav-log').classList.add('active');
+}
+
+// ── TOTALS ──
+function calcTotals(log){
+  let cal=0,pr=0,ca=0,fa=0;
+  MEALS.forEach(m=>(log[m]||[]).forEach(i=>{
+    const g=i.grams;
+    cal+=i.cal100*g/100; pr+=i.p100*g/100; ca+=i.c100*g/100; fa+=i.f100*g/100;
+  }));
+  return{cal:Math.round(cal),pr:Math.round(pr),ca:Math.round(ca),fa:Math.round(fa)};
+}
+function getTotals(){return calcTotals(state.log);}
+
+// Steps burn: ~0.04 kcal per step
+function getStepsCals(){return Math.round(state.steps*0.04);}
+
+// ── RENDER ──
+function render(){
+  const t=getTotals(), g=state.goal;
+  const stepsCals=getStepsCals();
+  const net=t.cal-stepsCals;
+  const remaining=Math.max(0, g.cal - net);
+
+  // Ring
+  const pct=Math.min(net/g.cal,1);
+  const ring=document.getElementById('ringFill');
+  ring.style.strokeDashoffset=188.5-(pct*188.5);
+  ring.classList.toggle('over',net>g.cal);
+
+  // Calorie hero
+  document.getElementById('ringCal').textContent=t.cal;
+  document.getElementById('calRemaining').textContent=net<=g.cal ? (g.cal-net) : '0';
+  document.getElementById('calGoalDisp').textContent=g.cal;
+  document.getElementById('calGoalBarLbl').textContent=g.cal;
+  const barPct=Math.min(net/g.cal*100,100);
+  const pb=document.getElementById('calProgressBar');
+  pb.style.width=barPct+'%';
+  pb.classList.toggle('over',net>g.cal);
+  document.getElementById('calBarPct').textContent=Math.round(barPct)+'%';
+  document.getElementById('statEaten').textContent=t.cal;
+  document.getElementById('statBurned').textContent=stepsCals;
+  document.getElementById('statNet').textContent=net;
+
+  // Macros
+  const pp=Math.min(t.pr/g.pr*100,100);
+  const cp=Math.min(t.ca/g.ca*100,100);
+  const fp=Math.min(t.fa/g.fa*100,100);
+  document.getElementById('valPr').textContent=t.pr+'g';
+  document.getElementById('valCa').textContent=t.ca+'g';
+  document.getElementById('valFa').textContent=t.fa+'g';
+  document.getElementById('barPr').style.width=pp+'%';
+  document.getElementById('barCa').style.width=cp+'%';
+  document.getElementById('barFa').style.width=fp+'%';
+  document.getElementById('pctPr').textContent=Math.round(pp)+'%';
+  document.getElementById('pctCa').textContent=Math.round(cp)+'%';
+  document.getElementById('pctFa').textContent=Math.round(fp)+'%';
+
+  // Steps
+  const sg=g.steps||10000;
+  document.getElementById('stepsVal').textContent=state.steps.toLocaleString();
+  document.getElementById('stepsGoalLbl').textContent=(sg).toLocaleString();
+  document.getElementById('stepsBar').style.width=Math.min(state.steps/sg*100,100)+'%';
+  document.getElementById('stepsCals').textContent='+'+stepsCals;
+
+  // Meal log on dashboard
+  const con=document.getElementById('mealLogSection');
+  con.innerHTML='';
+  MEALS.forEach(meal=>{
+    const items=state.log[meal]||[];
+    const mCal=items.reduce((s,i)=>s+i.cal100*i.grams/100,0);
+    const div=document.createElement('div');
+    div.className='meal-log-card';
+    div.innerHTML=`
+      <div class="meal-log-hdr">
+        <div class="mlh-left">
+          <span class="mlh-icon">${MEAL_ICONS[meal]}</span>
+          <span class="mlh-name">${meal}</span>
+        </div>
+        <span class="mlh-cal">${Math.round(mCal)} kcal</span>
+      </div>
+      ${items.length===0
+        ? '<div class="meal-empty-row">Nothing logged yet</div>'
+        : items.map((item,idx)=>`
+          <div class="meal-log-item">
+            ${item.photo
+              ? `<img class="mli-thumb" src="${item.photo}" onclick="document.getElementById('lbImg').src='${item.photo}';document.getElementById('lightbox').classList.add('open')">`
+              : `<div class="mli-placeholder">${item.emoji}</div>`}
+            <div class="mli-info">
+              <div class="mli-name">${item.name}</div>
+              <div class="mli-sub">${item.grams}g · P:${Math.round(item.p100*item.grams/100)}g C:${Math.round(item.c100*item.grams/100)}g F:${Math.round(item.f100*item.grams/100)}g</div>
+            </div>
+            <div class="mli-cal">${Math.round(item.cal100*item.grams/100)}</div>
+            <button class="mli-rm" onclick="removeItem('${meal}',${idx})">×</button>
+          </div>`).join('')}
+      <button class="meal-add-btn" onclick="pendingMeal='${meal}';showScreen('log',document.getElementById('nav-log'))">+ Add to ${meal}</button>
+    `;
+    con.appendChild(div);
+  });
+}
+
+// ── FOOD GRID ──
+let activeCat='All';
+function buildCats(){
+  const cats=['All',...new Set(DB.map(f=>f.cat)),'Custom'];
+  document.getElementById('catScroll').innerHTML=cats.map(c=>
+    `<button class="cat-chip ${c==='All'?'active':''}" onclick="setCat('${c}')">${c}</button>`
+  ).join('');
+}
+function setCat(c){
+  activeCat=c;
+  document.querySelectorAll('.cat-chip').forEach(b=>b.classList.toggle('active',b.textContent===c));
+  filterFoods();
+}
+function filterFoods(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const all=[...DB,...state.custom.map(f=>({...f,cat:'Custom'}))];
+  const filtered=all.filter(f=>(activeCat==='All'||f.cat===activeCat)&&(!q||f.name.toLowerCase().includes(q)||f.desc.toLowerCase().includes(q)));
+  const grid=document.getElementById('foodGrid');
+  if(!filtered.length){
+    grid.innerHTML='<div class="no-results"><div class="no-results-icon">🔍</div>No foods found. Add it in Custom!</div>';
+    return;
+  }
+  grid.innerHTML=filtered.map(f=>`
+    <div class="food-row" onclick="openAddModal(${f.id?f.id:('\'c'+f.cid+'\'')})">
+      <div class="fr-emoji">${f.emoji}</div>
+      <div class="fr-info">
+        <div class="fr-name">${f.name}</div>
+        <div class="fr-desc">${f.desc}</div>
+        <div class="fr-tags">
+          <span class="fr-tag p">P ${f.p}g</span>
+          <span class="fr-tag c">C ${f.c}g</span>
+          <span class="fr-tag f">F ${f.f}g</span>
+        </div>
+      </div>
+      <div class="fr-right">
+        <div class="fr-cal">${f.cal}</div>
+        <div class="fr-per">per 100g</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── ADD MODAL ──
+let pendingFood=null,pendingSrv=1,pendingMeal='Lunch',curUnit='g',pendingPhoto=null;
+
+function openAddModal(id){
+  const all=[...DB,...state.custom.map(f=>({...f,id:'c'+f.cid}))];
+  const food=typeof id==='string'&&id.startsWith('c')
+    ? state.custom.find(f=>'c'+f.cid===id)
+    : all.find(f=>f.id===id);
+  if(!food) return;
+  pendingFood=food; pendingSrv=1; curUnit='g'; pendingPhoto=null;
+  document.getElementById('mTitle').textContent='Add to Meal';
+  document.getElementById('mSub').textContent=food.emoji+' '+food.name+' · '+food.cal+' kcal/100g';
+  document.getElementById('gramInput').value=food.srv||100;
+  document.getElementById('srvNote').textContent='1 serving = '+(food.srv||100)+'g';
+  document.getElementById('srvDisp').textContent='1';
+  document.getElementById('photoWrap').classList.remove('has-photo');
+  document.getElementById('photoPreview').src='';
+  document.getElementById('camInput').value='';
+  document.getElementById('libInput').value='';
+  setUnit('g');
+  updatePreview();
+  document.getElementById('mealPicker').innerHTML=MEALS.map(m=>
+    `<button class="meal-pick-btn ${m===pendingMeal?'sel':''}" onclick="selMeal('${m}',this)">${MEAL_ICONS[m]} ${m}</button>`
+  ).join('');
+  document.getElementById('addModal').classList.add('open');
+}
+
+function setUnit(u){
+  curUnit=u;
+  document.getElementById('btnG').classList.toggle('active',u==='g');
+  document.getElementById('btnS').classList.toggle('active',u==='s');
+  document.getElementById('gramSec').classList.toggle('show',u==='g');
+  document.getElementById('srvSec').classList.toggle('show',u==='s');
+}
+
+function updatePreview(){
+  if(!pendingFood) return;
+  const g=parseFloat(document.getElementById('gramInput').value)||0;
+  const f=pendingFood;
+  document.getElementById('gpCal').textContent=Math.round(f.cal*g/100);
+  document.getElementById('gpPr').textContent=Math.round(f.p*g/100)+'g';
+  document.getElementById('gpCa').textContent=Math.round(f.c*g/100)+'g';
+  document.getElementById('gpFa').textContent=Math.round(f.f*g/100)+'g';
+}
+
+function changeSrv(d){pendingSrv=Math.max(0.5,pendingSrv+d);document.getElementById('srvDisp').textContent=pendingSrv;}
+function selMeal(m,btn){
+  pendingMeal=m;
+  document.querySelectorAll('.meal-pick-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function confirmAdd(){
+  if(!pendingFood) return;
+  const grams=curUnit==='g'
+    ?(parseFloat(document.getElementById('gramInput').value)||0)
+    :pendingSrv*(pendingFood.srv||100);
+  if(grams<=0){showToast('⚠ Enter a valid amount');return;}
+  state.log[pendingMeal].push({
+    name:pendingFood.name,emoji:pendingFood.emoji,
+    cal100:pendingFood.cal,p100:pendingFood.p,c100:pendingFood.c,f100:pendingFood.f,
+    grams:Math.round(grams),photo:pendingPhoto||null
+  });
+  saveState();render();
+  document.getElementById('addModal').classList.remove('open');
+  showToast(pendingFood.emoji+' Added to '+pendingMeal);
+}
+
+function removeItem(meal,idx){
+  state.log[meal].splice(idx,1);
+  saveState();render();
+}
+
+// ── PHOTO ──
+function handlePhoto(e){
+  const file=e.target.files[0]; if(!file) return;
+  const img=new Image(), url=URL.createObjectURL(file);
+  img.onload=()=>{
+    const maxW=800,scale=img.width>maxW?maxW/img.width:1;
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    pendingPhoto=c.toDataURL('image/jpeg',0.7);
+    document.getElementById('photoPreview').src=pendingPhoto;
+    document.getElementById('photoWrap').classList.add('has-photo');
+    URL.revokeObjectURL(url);
+  };
+  img.src=url;
+}
+function removePhoto(){
+  pendingPhoto=null;
+  document.getElementById('photoWrap').classList.remove('has-photo');
+  document.getElementById('photoPreview').src='';
+}
+
+// ── STEPS ──
+function openStepsModal(){
+  document.getElementById('stepsInput').value=state.steps||'';
+  document.getElementById('stepsModal').classList.add('open');
+}
+function saveSteps(){
+  state.steps=parseInt(document.getElementById('stepsInput').value)||0;
+  saveState();render();
+  document.getElementById('stepsModal').classList.remove('open');
+  showToast('🦶 Steps saved! +'+getStepsCals()+' kcal bonus');
+}
+
+// ── GOAL ──
+function loadGoalInputs(){
+  document.getElementById('gCal').value=state.goal.cal;
+  document.getElementById('gPr').value=state.goal.pr;
+  document.getElementById('gCa').value=state.goal.ca;
+  document.getElementById('gFa').value=state.goal.fa;
+  document.getElementById('gSteps').value=state.goal.steps||10000;
+}
+function saveGoal(){
+  state.goal={
+    cal:parseInt(document.getElementById('gCal').value)||2000,
+    pr:parseInt(document.getElementById('gPr').value)||150,
+    ca:parseInt(document.getElementById('gCa').value)||250,
+    fa:parseInt(document.getElementById('gFa').value)||65,
+    steps:parseInt(document.getElementById('gSteps').value)||10000,
+  };
+  saveState();render();showToast('✅ Goals saved!');
+}
+
+// ── CUSTOM FOOD ──
+function saveCustomFood(){
+  const name=document.getElementById('cName').value.trim();
+  const cal=parseFloat(document.getElementById('cCal').value);
+  if(!name||!cal){showToast('⚠ Name and calories required');return;}
+  state.custom.push({
+    cid:Date.now(),emoji:document.getElementById('cEmoji').value||'🍽',
+    name,cat:document.getElementById('cCat').value,
+    cal,p:parseFloat(document.getElementById('cPr').value)||0,
+    c:parseFloat(document.getElementById('cCa2').value)||0,
+    f:parseFloat(document.getElementById('cFa').value)||0,
+    srv:100,desc:'Per 100g · custom food'
+  });
+  saveState();showToast('✅ Food saved!');
+  ['cName','cEmoji','cCal','cPr','cCa2','cFa'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ── BACKUP & RESTORE ─────────────────────────────────────────────────
+function exportBackup(){
+  try{
+    const backup={version:1,exportedAt:new Date().toISOString(),appName:'Summer Goals',state};
+    const json=JSON.stringify(backup,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const date=new Date().toISOString().slice(0,10);
+    const filename=`summer-goals-backup-${date}.json`;
+    // Safari-compatible download
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=filename; a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },300);
+    storageSet('sg_last_backup',new Date().toLocaleString());
+    updateLastBackupInfo();
+    showToast('✅ Backup saved!');
+  }catch(e){ showToast('⚠ Export failed — try again'); }
+}
+
+function importBackup(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const backup=JSON.parse(e.target.result);
+      if(!backup.appName||backup.appName!=='Summer Goals'||!backup.state){
+        showToast('⚠ Invalid backup file'); return;
+      }
+      const dateStr=new Date(backup.exportedAt).toLocaleDateString();
+      showConfirm(
+        'Restore backup from '+dateStr+'? This replaces ALL current data.',
+        function(){
+          state={...state,...backup.state};
+          saveState(); render(); loadGoalInputs(); loadNotifSettings();
+          updateLastBackupInfo();
+          showToast('✅ Backup restored!');
+        }
+      );
+      event.target.value='';
+    }catch(e){
+      showToast('⚠ Could not read file');
+      event.target.value='';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetAllData(){
+  showConfirm(
+    'Delete ALL data? This cannot be undone.\n\nExport a backup first if you need it.',
+    function(){
+      state={
+        goal:{cal:2000,pr:150,ca:250,fa:65,steps:10000},
+        log:{Breakfast:[],Lunch:[],Dinner:[],Snacks:[]},
+        steps:0,custom:[],history:{},date:new Date().toDateString()
+      };
+      saveState(); render(); loadGoalInputs();
+      showToast('🗑 All data reset');
+    }
+  );
+}
+
+// Safari-safe confirm dialog (replaces native confirm() which is blocked in some contexts)
+function showConfirm(msg, onConfirm){
+  // Try native confirm first (works on Chrome desktop)
+  if(typeof window.confirm === 'function'){
+    try{
+      if(window.confirm(msg)){ onConfirm(); } return;
+    }catch(e){}
+  }
+  // Fallback: inline modal
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.82);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML=`
+    <div style="background:#161124;border:1px solid rgba(168,85,247,0.4);border-radius:16px;padding:24px;max-width:320px;width:100%;text-align:center;">
+      <div style="font-size:14px;color:#f0e8ff;line-height:1.6;margin-bottom:20px;white-space:pre-line;">${msg}</div>
+      <div style="display:flex;gap:10px;">
+        <button id="cf-cancel" style="flex:1;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(240,232,255,0.6);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Cancel</button>
+        <button id="cf-ok" style="flex:1;padding:12px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:white;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Confirm</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cf-cancel').onclick=()=>document.body.removeChild(overlay);
+  overlay.querySelector('#cf-ok').onclick=()=>{ document.body.removeChild(overlay); onConfirm(); };
+}
+
+function updateLastBackupInfo(){
+  const el=document.getElementById('lastBackupInfo'); if(!el) return;
+  const last=storageGet('sg_last_backup');
+  el.textContent=last?'Last backup: '+last:'No backup made yet';
+}
+
+// ── QUICK ADD FOOD ────────────────────────────────────────────────────
+function openQuickAdd(){
+  // Clear fields
+  ['qa-name','qa-emoji','qa-cal','qa-pr','qa-ca','qa-fa'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  updateQaPreview();
+  document.getElementById('quickAddModal').classList.add('open');
+}
+
+function updateQaPreview(){
+  const cal = parseFloat(document.getElementById('qa-cal').value)||0;
+  const pr  = parseFloat(document.getElementById('qa-pr').value)||0;
+  const ca  = parseFloat(document.getElementById('qa-ca').value)||0;
+  const fa  = parseFloat(document.getElementById('qa-fa').value)||0;
+  document.getElementById('qp-cal').textContent = cal;
+  document.getElementById('qp-pr').textContent  = pr+'g';
+  document.getElementById('qp-ca').textContent  = ca+'g';
+  document.getElementById('qp-fa').textContent  = fa+'g';
+}
+
+function saveQuickAdd(){
+  const name = document.getElementById('qa-name').value.trim();
+  const cal  = parseFloat(document.getElementById('qa-cal').value);
+  if(!name){ showToast('⚠ Food name is required'); return; }
+  if(!cal){  showToast('⚠ Calories are required');  return; }
+  const food = {
+    cid:   Date.now(),
+    emoji: document.getElementById('qa-emoji').value || '🍽',
+    name,
+    cat:   document.getElementById('qa-cat').value,
+    cal,
+    p:     parseFloat(document.getElementById('qa-pr').value)||0,
+    c:     parseFloat(document.getElementById('qa-ca').value)||0,
+    f:     parseFloat(document.getElementById('qa-fa').value)||0,
+    srv:   100,
+    desc:  'Per 100g · custom food'
+  };
+  state.custom.push(food);
+  saveState();
+  filterFoods(); // refresh grid so it shows up immediately
+  document.getElementById('quickAddModal').classList.remove('open');
+  showToast('✅ '+food.emoji+' '+name+' added!');
+}
+function renderWeekly(){
+  const today=new Date();
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    days.push(d);
+  }
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const goal=state.goal.cal;
+
+  // Build data array
+  const data=days.map(d=>{
+    const key=d.toDateString();
+    const isToday=key===today.toDateString();
+    if(isToday){
+      const t=getTotals();
+      return{key,day:dayNames[d.getDay()],cal:t.cal,isToday:true};
+    }
+    const h=state.history[key];
+    return{key,day:dayNames[d.getDay()],cal:h?h.cal:0,isToday:false};
+  });
+
+  const maxCal=Math.max(...data.map(d=>d.cal),goal,500);
+  const totalCal=data.reduce((s,d)=>s+d.cal,0);
+  const avgCal=Math.round(totalCal/7);
+  const onGoalDays=data.filter(d=>d.cal>0&&d.cal<=goal).length;
+
+  // Bar chart
+  document.getElementById('weekBars').innerHTML=data.map(d=>{
+    const h=Math.max((d.cal/maxCal)*100,d.cal>0?8:3);
+    return`<div class="week-bar-col">
+      <div class="week-bar-bg">
+        <div class="week-bar-fill ${d.isToday?'today':''} ${d.cal>goal?'over':''}" style="height:${h}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('weekDayLabels').innerHTML=data.map(d=>
+    `<div style="flex:1;text-align:center;font-size:10px;font-weight:700;color:${d.isToday?'var(--purple3)':'var(--dimmed)'};margin-top:4px;">${d.day}</div>`
+  ).join('');
+
+  document.getElementById('wAvgCal').textContent=avgCal;
+  document.getElementById('wTotalCal').textContent=totalCal;
+  document.getElementById('wGoalDays').textContent=onGoalDays+'/7';
+
+  document.getElementById('weekDetail').innerHTML=data.map(d=>{
+    const pct=Math.min(d.cal/goal*100,100);
+    return`<div class="wdd-row">
+      <div class="wdd-day ${d.isToday?'today':''}">${d.isToday?'Today':d.day}</div>
+      <div class="wdd-bar-wrap">
+        <div class="wdd-bar-bg"><div class="wdd-bar-fill ${d.cal>goal?'over':''}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="wdd-cal">${d.cal>0?d.cal:'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── MODALS CLOSE ──
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+
+// ── NOTIFICATIONS ──
+const NOTIF_SUPPORTED=(typeof Notification!=='undefined');
+const NOTIF_SCHEDULES=[
+  {id:'breakfast',hour:8, min:0,title:'🌅 Log your breakfast!',body:"Don't forget to track your morning meal."},
+  {id:'lunch',    hour:13,min:0,title:'☀️ Lunch time — log it!',body:'Time to log your injera & tsebhi!'},
+  {id:'dinner',   hour:19,min:0,title:'🌆 Log your dinner!',body:"Evening meal — don't let it go untracked."},
+  {id:'summary',  hour:21,min:0,title:'🌙 Daily Summary',body:null},
+];
+let _notifTimers={};
+
+function updatePermBanner(){
+  const banner=document.getElementById('permBanner'); if(!banner) return;
+  const btn=document.getElementById('permBtn');
+  if(!NOTIF_SUPPORTED){
+    banner.classList.add('denied');
+    banner.querySelector('.npb-title').textContent='⚠ Not Supported on Safari';
+    banner.querySelector('.npb-desc').textContent='Use Chrome on Android for notifications.';
+    if(btn) btn.style.display='none'; return;
+  }
+  if(Notification.permission==='granted'){
+    banner.classList.add('granted');
+    banner.querySelector('.npb-icon').textContent='✅';
+    banner.querySelector('.npb-title').textContent='Notifications Enabled';
+    banner.querySelector('.npb-desc').textContent='Meal reminders are active.';
+    if(btn) btn.style.display='none';
+  } else if(Notification.permission==='denied'){
+    banner.classList.add('denied');
+    banner.querySelector('.npb-icon').textContent='🚫';
+    banner.querySelector('.npb-title').textContent='Notifications Blocked';
+    banner.querySelector('.npb-desc').textContent='Enable in phone settings then reload.';
+    if(btn) btn.style.display='none';
+  }
+}
+async function requestPermission(){
+  if(!NOTIF_SUPPORTED){showToast('⚠ Not supported on Safari');return;}
+  try{
+    const r=await Notification.requestPermission();
+    updatePermBanner();
+    if(r==='granted'){showToast('✅ Notifications enabled!');scheduleAll();}
+    else showToast('⚠ Permission denied');
+  }catch(e){showToast('⚠ Could not request permission');}
+}
+function saveNotifSettings(){
+  const s={
+    breakfast:document.getElementById('tog-breakfast').checked,
+    lunch:document.getElementById('tog-lunch').checked,
+    dinner:document.getElementById('tog-dinner').checked,
+    summary:document.getElementById('tog-summary').checked,
+  };
+  storageSet('sg_notif',JSON.stringify(s));scheduleAll();showToast('🔔 Reminders updated');
+}
+function loadNotifSettings(){
+  try{
+    const s=JSON.parse(storageGet('sg_notif')||'null');
+    if(s) ['breakfast','lunch','dinner','summary'].forEach(k=>{const el=document.getElementById('tog-'+k);if(el)el.checked=!!s[k];});
+  }catch(e){}
+}
+function getNotifSettings(){try{return JSON.parse(storageGet('sg_notif')||'{}');}catch(e){return{};}}
+function scheduleAll(){
+  if(!NOTIF_SUPPORTED||Notification.permission!=='granted') return;
+  try{
+    Object.values(_notifTimers).forEach(t=>clearTimeout(t)); _notifTimers={};
+    const s=getNotifSettings(),now=new Date();
+    NOTIF_SCHEDULES.forEach(n=>{
+      if(!s[n.id]) return;
+      const fire=new Date(); fire.setHours(n.hour,n.min,0,0);
+      if(fire<=now) fire.setDate(fire.getDate()+1);
+      _notifTimers[n.id]=setTimeout(()=>fireNotif(n),fire-now);
+    });
+  }catch(e){}
+}
+function fireNotif(n){
+  if(!NOTIF_SUPPORTED||Notification.permission!=='granted') return;
+  try{
+    let body=n.body;
+    if(n.id==='summary'){
+      const t=getTotals(),g=state.goal,rem=g.cal-t.cal;
+      body=t.cal===0?"You haven't logged anything today. Start tracking tomorrow! 💪"
+        :rem>0?`You logged ${t.cal} kcal — ${rem} under goal. Great work! 💜`
+        :`You logged ${t.cal} kcal — ${Math.abs(rem)} over goal. Balance it tomorrow! 💪`;
+    }
+    new Notification(n.title,{body,tag:n.id});
+    const s=getNotifSettings();
+    if(s[n.id]){const tm=new Date();tm.setDate(tm.getDate()+1);tm.setHours(n.hour,n.min,0,0);_notifTimers[n.id]=setTimeout(()=>fireNotif(n),tm-new Date());}
+  }catch(e){}
+}
+function sendTestNotif(){
+  if(!NOTIF_SUPPORTED){showToast('⚠ Not supported on Safari');return;}
+  if(Notification.permission!=='granted'){showToast('⚠ Enable notifications first');return;}
+  try{new Notification('🔔 Summer Goals Test',{body:'Notifications working! 💜'});showToast('✅ Test sent!');}catch(e){showToast('⚠ Error sending notification');}
+}
+
+// ── TOAST ──
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── MEAL BUILDER ──────────────────────────────────────────────────────
+const MEAL_TYPES = [
+  {id:'pizza',     icon:'🍕', label:'Pizza'},
+  {id:'burger',    icon:'🍔', label:'Burger'},
+  {id:'wrap',      icon:'🌯', label:'Wrap'},
+  {id:'pasta',     icon:'🍝', label:'Pasta'},
+  {id:'sandwich',  icon:'🥪', label:'Sandwich'},
+  {id:'salad',     icon:'🥗', label:'Salad'},
+  {id:'injera',    icon:'🫓', label:'Injera'},
+  {id:'ful',       icon:'🫘', label:'Ful'},
+  {id:'fata',      icon:'🍞', label:'Fata'},
+  {id:'lasagna',   icon:'🫕', label:'Lasagna'},
+  {id:'hotplate',  icon:'🔥', label:'Hot Plate'},
+];
+
+// All ingredients: {id, emoji, name, cal, p, c, f, grams (fixed portion), section}
+const BUILDER_INGREDIENTS = {
+  pizza:[
+    {section:'Base (choose one)',items:[
+      {id:'pb-thin',   emoji:'🫓',name:'Thin crust base',       cal:265,p:9, c:49,f:3, g:80},
+      {id:'pb-thick',  emoji:'🍞',name:'Thick crust base',      cal:270,p:10,c:50,f:4, g:100},
+      {id:'pb-stuffed',emoji:'🍞',name:'Stuffed crust base',    cal:310,p:11,c:52,f:8, g:110},
+    ]},
+    {section:'Sauce',items:[
+      {id:'ps-tom',    emoji:'🍅',name:'Tomato sauce',           cal:30, p:1, c:6, f:0, g:40},
+      {id:'ps-white',  emoji:'🧴',name:'White cream sauce',      cal:80, p:2, c:4, f:7, g:40},
+      {id:'ps-bbq',    emoji:'🫙',name:'BBQ sauce',              cal:60, p:1, c:14,f:0, g:30},
+    ]},
+    {section:'Cheese',items:[
+      {id:'pc-mozz',   emoji:'🧀',name:'Mozzarella',             cal:90, p:7, c:1, f:7, g:60},
+      {id:'pc-chedd',  emoji:'🧀',name:'Cheddar',                cal:121,p:7, c:0, f:10,g:30},
+      {id:'pc-extra',  emoji:'🧀',name:'Extra cheese',           cal:140,p:9, c:1, f:11,g:80},
+    ]},
+    {section:'Meat Toppings',items:[
+      {id:'pm-steak',  emoji:'🥩',name:'Steak strips',           cal:130,p:14,c:0, f:8, g:80},
+      {id:'pm-beef',   emoji:'🥩',name:'Beef mince',             cal:100,p:10,c:1, f:7, g:60},
+      {id:'pm-chicken',emoji:'🍗',name:'Chicken pieces',         cal:85, p:14,c:0, f:3, g:70},
+      {id:'pm-pepp',   emoji:'🌶',name:'Pepperoni',              cal:130,p:5, c:1, f:12,g:30},
+      {id:'pm-ham',    emoji:'🥓',name:'Beef ham',               cal:70, p:7, c:1, f:4, g:40},
+      {id:'pm-shrimp', emoji:'🦐',name:'Shrimp',                 cal:60, p:11,c:0, f:2, g:60},
+      {id:'pm-prosc',  emoji:'🥩',name:'Prosciutto',             cal:60, p:8, c:0, f:3, g:30},
+    ]},
+    {section:'Veg & Egg Toppings',items:[
+      {id:'pv-pepper', emoji:'🫑',name:'Bell peppers',           cal:10, p:0, c:2, f:0, g:30},
+      {id:'pv-mush',   emoji:'🍄',name:'Mushrooms',              cal:8,  p:1, c:1, f:0, g:30},
+      {id:'pv-onion',  emoji:'🧅',name:'Onions',                 cal:12, p:0, c:3, f:0, g:30},
+      {id:'pv-olive',  emoji:'🫒',name:'Olives',                 cal:36, p:0, c:1, f:4, g:20},
+      {id:'pv-tom',    emoji:'🍅',name:'Tomato slices',          cal:8,  p:0, c:2, f:0, g:40},
+      {id:'pv-corn',   emoji:'🌽',name:'Sweetcorn',              cal:22, p:1, c:5, f:0, g:25},
+      {id:'pv-egg',    emoji:'🥚',name:'Boiled egg (sliced)',     cal:78, p:6, c:1, f:5, g:50},
+    ]},
+  ],
+  burger:[
+    {section:'Bun',items:[
+      {id:'bb-reg',    emoji:'🍞',name:'Regular bun',            cal:145,p:5, c:26,f:2, g:55},
+      {id:'bb-brioche',emoji:'🍞',name:'Brioche bun',            cal:190,p:6, c:30,f:6, g:65},
+      {id:'bb-whole',  emoji:'🍞',name:'Wholemeal bun',          cal:130,p:6, c:22,f:3, g:55},
+      {id:'bb-none',   emoji:'🥬',name:'No bun (lettuce wrap)',  cal:5,  p:0, c:1, f:0, g:20},
+    ]},
+    {section:'Patty',items:[
+      {id:'bpa-beef',  emoji:'🥩',name:'Beef patty (100g)',      cal:254,p:19,c:0, f:19,g:100},
+      {id:'bpa-double',emoji:'🥩',name:'Double beef patty',      cal:508,p:38,c:0, f:38,g:200},
+      {id:'bpa-chick', emoji:'🍗',name:'Chicken patty (grilled)',cal:148,p:22,c:3, f:5, g:100},
+      {id:'bpa-chickf',emoji:'🍗',name:'Chicken patty (fried)',  cal:226,p:20,c:10,f:12,g:100},
+      {id:'bpa-steak', emoji:'🥩',name:'Steak smash patty',      cal:280,p:22,c:0, f:21,g:110},
+    ]},
+    {section:'Cheese',items:[
+      {id:'bc-slice',  emoji:'🧀',name:'Cheese slice',           cal:64, p:4, c:2, f:5, g:20},
+      {id:'bc-double', emoji:'🧀',name:'Double cheese',          cal:128,p:8, c:4, f:10,g:40},
+    ]},
+    {section:'Sauce & Condiments',items:[
+      {id:'bs-mayo',   emoji:'🧴',name:'Mayo',                   cal:102,p:0, c:0, f:11,g:15},
+      {id:'bs-ketch',  emoji:'🫙',name:'Ketchup',                cal:19, p:0, c:5, f:0, g:17},
+      {id:'bs-mustard',emoji:'🌿',name:'Mustard',                cal:10, p:1, c:1, f:0, g:10},
+      {id:'bs-awaze',  emoji:'🌶',name:'Awaze sauce',            cal:17, p:0, c:2, f:1, g:15},
+      {id:'bs-bbq',    emoji:'🫙',name:'BBQ sauce',              cal:36, p:0, c:9, f:0, g:30},
+    ]},
+    {section:'Toppings',items:[
+      {id:'bt-lett',   emoji:'🥬',name:'Lettuce',                cal:3,  p:0, c:1, f:0, g:15},
+      {id:'bt-tom',    emoji:'🍅',name:'Tomato',                 cal:7,  p:0, c:2, f:0, g:40},
+      {id:'bt-onion',  emoji:'🧅',name:'Onion',                  cal:12, p:0, c:3, f:0, g:30},
+      {id:'bt-pickle', emoji:'🥒',name:'Pickles',                cal:5,  p:0, c:1, f:0, g:28},
+      {id:'bt-egg',    emoji:'🥚',name:'Fried egg',              cal:90, p:6, c:0, f:7, g:46},
+      {id:'bt-avoc',   emoji:'🥑',name:'Avocado slices',         cal:80, p:1, c:4, f:7, g:50},
+      {id:'bt-bacon',  emoji:'🥓',name:'Beef bacon strips',      cal:80, p:7, c:0, f:6, g:28},
+    ]},
+  ],
+  wrap:[
+    {section:'Wrap / Base',items:[
+      {id:'wb-flour',  emoji:'🫓',name:'Flour tortilla',         cal:218,p:6, c:36,f:6, g:80},
+      {id:'wb-whole',  emoji:'🫓',name:'Wholemeal tortilla',     cal:195,p:7, c:32,f:5, g:80},
+      {id:'wb-injera', emoji:'🫓',name:'Injera (teff)',          cal:260,p:10,c:50,f:2, g:200},
+      {id:'wb-pita',   emoji:'🫓',name:'Pita bread',             cal:165,p:5, c:33,f:1, g:60},
+    ]},
+    {section:'Protein',items:[
+      {id:'wp-chicken',emoji:'🍗',name:'Grilled chicken',        cal:165,p:31,c:0, f:4, g:100},
+      {id:'wp-shawar', emoji:'🥙',name:'Shawarma chicken',       cal:175,p:22,c:5, f:8, g:120},
+      {id:'wp-beef',   emoji:'🥩',name:'Beef strips',            cal:210,p:22,c:3, f:13,g:100},
+      {id:'wp-falafel',emoji:'🧆',name:'Falafel (3 pcs)',        cal:180,p:7, c:20,f:9, g:100},
+      {id:'wp-shrimp', emoji:'🦐',name:'Grilled shrimp',         cal:99, p:20,c:0, f:2, g:100},
+    ]},
+    {section:'Sauce',items:[
+      {id:'ws-hum',    emoji:'🫙',name:'Hummus',                 cal:53, p:2, c:4, f:3, g:30},
+      {id:'ws-tzat',   emoji:'🥛',name:'Tzatziki / yogurt',      cal:30, p:2, c:2, f:2, g:30},
+      {id:'ws-awaze',  emoji:'🌶',name:'Awaze',                  cal:17, p:0, c:2, f:1, g:15},
+      {id:'ws-mayo',   emoji:'🧴',name:'Mayo',                   cal:102,p:0, c:0, f:11,g:15},
+      {id:'ws-hot',    emoji:'🌶',name:'Hot sauce',              cal:10, p:0, c:2, f:0, g:15},
+    ]},
+    {section:'Fillings',items:[
+      {id:'wf-lett',   emoji:'🥬',name:'Lettuce',                cal:3,  p:0, c:1, f:0, g:15},
+      {id:'wf-tom',    emoji:'🍅',name:'Tomato',                 cal:7,  p:0, c:2, f:0, g:40},
+      {id:'wf-onion',  emoji:'🧅',name:'Onion',                  cal:12, p:0, c:3, f:0, g:30},
+      {id:'wf-chees',  emoji:'🧀',name:'Cheese',                 cal:64, p:4, c:2, f:5, g:20},
+      {id:'wf-pickle', emoji:'🥒',name:'Pickles',                cal:5,  p:0, c:1, f:0, g:28},
+      {id:'wf-fries',  emoji:'🍟',name:'Chips inside',           cal:156,p:2, c:21,f:8, g:50},
+    ]},
+  ],
+  pasta:[
+    {section:'Pasta Base',items:[
+      {id:'pa-spag',   emoji:'🍝',name:'Spaghetti (cooked)',     cal:158,p:6, c:31,f:1, g:200},
+      {id:'pa-penn',   emoji:'🍝',name:'Penne (cooked)',         cal:158,p:6, c:31,f:1, g:200},
+      {id:'pa-fus',    emoji:'🍝',name:'Fusilli (cooked)',       cal:158,p:6, c:31,f:1, g:200},
+      {id:'pa-whole',  emoji:'🍝',name:'Wholemeal pasta',        cal:140,p:6, c:27,f:1, g:200},
+    ]},
+    {section:'Sauce',items:[
+      {id:'ps2-tom',   emoji:'🍅',name:'Tomato / Marinara',      cal:80, p:2, c:14,f:2, g:120},
+      {id:'ps2-bolg',  emoji:'🥩',name:'Bolognese (beef)',       cal:145,p:10,c:8, f:9, g:120},
+      {id:'ps2-carb',  emoji:'🧀',name:'Carbonara (cream+egg)', cal:220,p:8, c:6, f:19,g:120},
+      {id:'ps2-alfr',  emoji:'🧈',name:'Alfredo (butter+cream)',cal:195,p:4, c:5, f:19,g:100},
+      {id:'ps2-pest',  emoji:'🌿',name:'Pesto',                  cal:160,p:4, c:3, f:15,g:60},
+      {id:'ps2-arrab', emoji:'🌶',name:'Arrabbiata (spicy tom)', cal:85, p:2, c:14,f:3, g:120},
+    ]},
+    {section:'Protein Add-ons',items:[
+      {id:'pp-chicken',emoji:'🍗',name:'Grilled chicken',        cal:165,p:31,c:0, f:4, g:100},
+      {id:'pp-beef',   emoji:'🥩',name:'Beef mince',             cal:135,p:13,c:0, f:9, g:70},
+      {id:'pp-shrimp', emoji:'🦐',name:'Shrimp',                 cal:99, p:20,c:0, f:2, g:100},
+      {id:'pp-tuna',   emoji:'🐟',name:'Tuna',                   cal:58, p:13,c:0, f:1, g:50},
+    ]},
+    {section:'Extras',items:[
+      {id:'pe-parm',   emoji:'🧀',name:'Parmesan (grated)',      cal:65, p:6, c:1, f:4, g:15},
+      {id:'pe-mozz',   emoji:'🧀',name:'Mozzarella',             cal:90, p:7, c:1, f:7, g:60},
+      {id:'pe-garlic', emoji:'🧄',name:'Garlic bread (slice)',   cal:138,p:3, c:18,f:6, g:40},
+      {id:'pe-chilli', emoji:'🌶',name:'Chilli flakes',          cal:6,  p:0, c:1, f:0, g:2},
+    ]},
+  ],
+  sandwich:[
+    {section:'Bread',items:[
+      {id:'sb-white',  emoji:'🍞',name:'White bread (2 slices)', cal:160,p:5, c:30,f:2, g:60},
+      {id:'sb-whole',  emoji:'🍞',name:'Wholemeal (2 slices)',   cal:148,p:8, c:25,f:2, g:60},
+      {id:'sb-toast',  emoji:'🍞',name:'Toasted white (2)',      cal:160,p:5, c:30,f:2, g:60},
+      {id:'sb-roll',   emoji:'🍞',name:'Bread roll',             cal:216,p:6, c:40,f:3, g:80},
+      {id:'sb-ciab',   emoji:'🫓',name:'Ciabatta',               cal:235,p:8, c:44,f:3, g:80},
+      {id:'sb-himb',   emoji:'🫓',name:'Himbasha (slice)',       cal:290,p:7, c:52,f:6, g:100,desc:'Eritrean sweet spiced celebration bread'},
+      {id:'sb-kitch',  emoji:'🫓',name:'Kitcha (piece)',         cal:200,p:6, c:38,f:3, g:80,desc:'Eritrean thin unleavened flatbread'},
+    ]},
+    {section:'Protein',items:[
+      {id:'sp-bham',   emoji:'🥩',name:'Beef ham slices',        cal:74, p:8, c:1, f:4, g:40},
+      {id:'sp-bham100',emoji:'🥩',name:'Beef ham (100g)',        cal:185,p:19,c:2, f:11,g:100},
+      {id:'sp-mort40', emoji:'🥩',name:'Beef mortadella (40g)',  cal:92, p:6, c:1, f:7, g:40},
+      {id:'sp-mort100',emoji:'🥩',name:'Beef mortadella (100g)', cal:230,p:15,c:2, f:18,g:100},
+      {id:'sp-chick',  emoji:'🍗',name:'Grilled chicken',        cal:100,p:19,c:0, f:2, g:60},
+      {id:'sp-tuna',   emoji:'🐟',name:'Tuna (drained)',         cal:58, p:13,c:0, f:1, g:50},
+      {id:'sp-egg',    emoji:'🥚',name:'Boiled egg (2)',         cal:155,p:13,c:1, f:11,g:100},
+      {id:'sp-falafel',emoji:'🧆',name:'Falafel',                cal:180,p:7, c:20,f:9, g:100},
+    ]},
+    {section:'Cheese',items:[
+      {id:'sc-proc',   emoji:'🧀',name:'Processed slice',        cal:64, p:4, c:2, f:5, g:20},
+      {id:'sc-chedd',  emoji:'🧀',name:'Cheddar',                cal:121,p:7, c:0, f:10,g:30},
+      {id:'sc-cream',  emoji:'🧀',name:'Cream cheese spread',    cal:103,p:2, c:1, f:10,g:30},
+    ]},
+    {section:'Sauce & Spread',items:[
+      {id:'ss-mayo',   emoji:'🧴',name:'Mayo',                   cal:102,p:0, c:0, f:11,g:15},
+      {id:'ss-awaze',  emoji:'🌶',name:'Awaze',                  cal:17, p:0, c:2, f:1, g:15},
+      {id:'ss-mustard',emoji:'🌿',name:'Mustard',                cal:10, p:1, c:1, f:0, g:10},
+      {id:'ss-butter', emoji:'🧈',name:'Butter',                 cal:100,p:0, c:0, f:11,g:14},
+      {id:'ss-hummus', emoji:'🫙',name:'Hummus',                 cal:53, p:2, c:4, f:3, g:30},
+    ]},
+    {section:'Fillings',items:[
+      {id:'sf-lett',   emoji:'🥬',name:'Lettuce',                cal:3,  p:0, c:1, f:0, g:15},
+      {id:'sf-tom',    emoji:'🍅',name:'Tomato',                 cal:7,  p:0, c:2, f:0, g:40},
+      {id:'sf-cuc',    emoji:'🥒',name:'Cucumber',               cal:5,  p:0, c:1, f:0, g:30},
+      {id:'sf-onion',  emoji:'🧅',name:'Red onion',              cal:12, p:0, c:3, f:0, g:30},
+      {id:'sf-pick',   emoji:'🥒',name:'Pickles',                cal:5,  p:0, c:1, f:0, g:28},
+      {id:'sf-avoc',   emoji:'🥑',name:'Avocado',                cal:80, p:1, c:4, f:7, g:50},
+    ]},
+  ],
+  salad:[
+    {section:'Greens Base',items:[
+      {id:'slb-mixed', emoji:'🥗',name:'Mixed greens',           cal:20, p:2, c:3, f:0, g:100},
+      {id:'slb-spin',  emoji:'🥬',name:'Spinach',                cal:23, p:3, c:4, f:0, g:100},
+      {id:'slb-rom',   emoji:'🥬',name:'Romaine lettuce',        cal:17, p:1, c:3, f:0, g:100},
+      {id:'slb-kale',  emoji:'🥬',name:'Kale',                   cal:49, p:4, c:9, f:1, g:80},
+    ]},
+    {section:'Protein',items:[
+      {id:'slp-chick', emoji:'🍗',name:'Grilled chicken',        cal:165,p:31,c:0, f:4, g:100},
+      {id:'slp-tuna',  emoji:'🐟',name:'Tuna',                   cal:116,p:26,c:0, f:1, g:85},
+      {id:'slp-shrimp',emoji:'🦐',name:'Grilled shrimp',         cal:99, p:20,c:0, f:2, g:100},
+      {id:'slp-egg',   emoji:'🥚',name:'Boiled egg',             cal:78, p:6, c:1, f:5, g:50},
+      {id:'slp-beef',  emoji:'🥩',name:'Beef strips (grilled)',  cal:210,p:22,c:3, f:13,g:100},
+      {id:'slp-fal',   emoji:'🧆',name:'Falafel',                cal:180,p:7, c:20,f:9, g:100},
+    ]},
+    {section:'Toppings',items:[
+      {id:'slt-tom',   emoji:'🍅',name:'Cherry tomatoes',        cal:14, p:1, c:3, f:0, g:80},
+      {id:'slt-cuc',   emoji:'🥒',name:'Cucumber',               cal:10, p:1, c:2, f:0, g:60},
+      {id:'slt-onion', emoji:'🧅',name:'Red onion',              cal:16, p:0, c:4, f:0, g:40},
+      {id:'slt-avo',   emoji:'🥑',name:'Avocado',                cal:80, p:1, c:4, f:7, g:50},
+      {id:'slt-corn',  emoji:'🌽',name:'Sweetcorn',              cal:44, p:2, c:10,f:0, g:50},
+      {id:'slt-chick', emoji:'🧆',name:'Chickpeas',              cal:82, p:4, c:14,f:2, g:50},
+      {id:'slt-feta',  emoji:'🧀',name:'Feta cheese',            cal:106,p:6, c:2, f:8, g:40},
+      {id:'slt-olive', emoji:'🫒',name:'Olives',                 cal:36, p:0, c:1, f:4, g:20},
+      {id:'slt-crout', emoji:'🍞',name:'Croutons',               cal:70, p:2, c:11,f:3, g:20},
+    ]},
+    {section:'Dressing',items:[
+      {id:'sld-olive', emoji:'🫒',name:'Olive oil + lemon',      cal:119,p:0, c:1, f:13,g:14},
+      {id:'sld-caes',  emoji:'🧴',name:'Caesar dressing',        cal:102,p:1, c:2, f:10,g:30},
+      {id:'sld-ranch', emoji:'🧴',name:'Ranch dressing',         cal:109,p:1, c:2, f:11,g:30},
+      {id:'sld-bals',  emoji:'🫙',name:'Balsamic vinegar',       cal:28, p:0, c:6, f:0, g:15},
+      {id:'sld-tah',   emoji:'🫙',name:'Tahini dressing',        cal:95, p:3, c:3, f:9, g:25},
+      {id:'sld-hum',   emoji:'🫙',name:'Hummus dressing',        cal:53, p:2, c:4, f:3, g:30},
+    ]},
+  ],
+
+  injera:[
+    {section:'Injera Base',items:[
+      {id:'inj-teff',  emoji:'🫓',name:'Injera – teff (1 large)', cal:260,p:10,c:50,f:2, g:200},
+      {id:'inj-mix',   emoji:'🫓',name:'Injera – mixed flour (1)',cal:290,p:8, c:56,f:4, g:200},
+      {id:'inj-half',  emoji:'🫓',name:'Half injera (teff)',      cal:130,p:5, c:25,f:1, g:100},
+    ]},
+    {section:'Tsebhi (Stews)',items:[
+      {id:'ts-zigni',  emoji:'🥩',name:'Tsebhi Zigni – beef',     cal:316,p:28,c:12,f:18,g:200},
+      {id:'ts-derho',  emoji:'🍗',name:'Tsebhi Derho – chicken',  cal:290,p:32,c:10,f:14,g:200},
+      {id:'ts-bkri',   emoji:'🐑',name:'Tsebhi Bkri – goat',      cal:304,p:30,c:10,f:16,g:200},
+      {id:'ts-ades',   emoji:'🫘',name:'Tsebhi Ades – lentils',   cal:232,p:14,c:32,f:8, g:200},
+      {id:'ts-shiro',  emoji:'🧆',name:'Tsebhi Shiro',            cal:260,p:16,c:28,f:10,g:200},
+      {id:'ts-alicha', emoji:'🥦',name:'Alicha – mild veg stew',  cal:170,p:6, c:24,f:6, g:200},
+      {id:'ts-birsen', emoji:'🥣',name:'Alicha Birsen – lentils', cal:210,p:10,c:32,f:6, g:200},
+      {id:'ts-kik',    emoji:'🫘',name:'Kik Alicha – split peas', cal:220,p:14,c:34,f:4, g:200},
+      {id:'ts-silsi',  emoji:'🍅',name:'Silsi – tomato stew',     cal:140,p:4, c:18,f:6, g:200},
+      {id:'ts-hilbet', emoji:'🫛',name:'Hilbet – bean paste',     cal:118,p:8, c:15,f:3, g:100},
+    ]},
+    {section:'Meat & Sides',items:[
+      {id:'inj-qulwa', emoji:'🥩',name:'Qulwa / Tibsi – beef',    cal:210,p:22,c:3, f:13,g:100},
+      {id:'inj-cqulwa',emoji:'🍗',name:'Qulwa / Tibsi – chicken', cal:175,p:23,c:3, f:8, g:100},
+      {id:'inj-hamli', emoji:'🥬',name:'Hamli – sautéed greens',  cal:113,p:5, c:12,f:6, g:150},
+      {id:'inj-ayib',  emoji:'🧀',name:'Ayib – fresh cheese',     cal:78, p:9, c:2, f:4, g:80},
+      {id:'inj-fish',  emoji:'🐟',name:'Agame – fish stew',       cal:260,p:36,c:10,f:10,g:200},
+    ]},
+    {section:'Breakfast Add-ons',items:[
+      {id:'inj-ful',   emoji:'🫘',name:'Shahan Ful (fava beans)', cal:284,p:16,c:40,f:8, g:200},
+      {id:'inj-egg',   emoji:'🥚',name:'Boiled egg (1)',          cal:78, p:6, c:1, f:5, g:50},
+      {id:'inj-gaat',  emoji:'🥣',name:"Ga'at porridge (side)",  cal:155,p:4, c:28,f:4, g:100},
+    ]},
+  ],
+
+  ful:[
+    {section:'Ful Base (Fava Beans)',items:[
+      {id:'ful-base',  emoji:'🫘',name:'Fava beans (cooked, 200g)',cal:200,p:14,c:32,f:2, g:200},
+      {id:'ful-chick', emoji:'🫘',name:'+ Chickpeas mixed (200g)', cal:210,p:12,c:36,f:3, g:200},
+    ]},
+    {section:'Dressing (Essential)',items:[
+      {id:'ful-oil',   emoji:'🫒',name:'Olive oil (drizzle)',      cal:119,p:0, c:0, f:13,g:14},
+      {id:'ful-lem',   emoji:'🍋',name:'Lemon juice',              cal:8,  p:0, c:3, f:0, g:30},
+      {id:'ful-gar',   emoji:'🧄',name:'Garlic (mashed)',          cal:15, p:1, c:3, f:0, g:10},
+      {id:'ful-cumin', emoji:'🌿',name:'Cumin & spices',           cal:8,  p:0, c:1, f:0, g:5},
+      {id:'ful-bere',  emoji:'🌶',name:'Berbere spice',            cal:10, p:0, c:2, f:0, g:5},
+      {id:'ful-tah',   emoji:'🫙',name:'Tahini sauce',             cal:95, p:3, c:3, f:9, g:25},
+      {id:'ful-ghee',  emoji:'🧈',name:'Spiced ghee (tesmi)',      cal:130,p:0, c:0, f:14,g:15},
+    ]},
+    {section:'Protein Toppings',items:[
+      {id:'ful-egg-b', emoji:'🥚',name:'Boiled egg (1, halved)',   cal:78, p:6, c:1, f:5, g:50},
+      {id:'ful-egg-f', emoji:'🍳',name:'Fried egg (1)',            cal:90, p:6, c:0, f:7, g:46},
+      {id:'ful-feta',  emoji:'🧀',name:'Feta cheese crumbled',     cal:106,p:6, c:2, f:8, g:40},
+      {id:'ful-fal',   emoji:'🧆',name:'Falafel (3 pcs)',          cal:180,p:7, c:20,f:9, g:100},
+    ]},
+    {section:'Fresh Toppings',items:[
+      {id:'ful-tom',   emoji:'🍅',name:'Diced tomatoes',           cal:14, p:1, c:3, f:0, g:80},
+      {id:'ful-cuc',   emoji:'🥒',name:'Cucumber',                 cal:10, p:0, c:2, f:0, g:60},
+      {id:'ful-onion', emoji:'🧅',name:'Red / green onion',        cal:14, p:0, c:3, f:0, g:35},
+      {id:'ful-pars',  emoji:'🌿',name:'Parsley / coriander',      cal:4,  p:0, c:1, f:0, g:10},
+      {id:'ful-jal',   emoji:'🌶',name:'Jalapeño / green chilli',  cal:4,  p:0, c:1, f:0, g:15},
+      {id:'ful-olive', emoji:'🫒',name:'Black olives',             cal:36, p:0, c:1, f:4, g:20},
+      {id:'ful-rad',   emoji:'🫚',name:'Radish slices',            cal:5,  p:0, c:1, f:0, g:25},
+    ]},
+    {section:'Bread (for scooping)',items:[
+      {id:'ful-pita',  emoji:'🫓',name:'Pita bread (1)',           cal:165,p:5, c:33,f:1, g:60},
+      {id:'ful-inj',   emoji:'🫓',name:'Injera (piece)',           cal:130,p:5, c:25,f:1, g:100},
+      {id:'ful-roll',  emoji:'🍞',name:'Crusty bread roll',        cal:165,p:5, c:30,f:2, g:60},
+    ]},
+  ],
+
+  fata:[
+    {section:'Bread Base',items:[
+      {id:'fat-roll3', emoji:'🍞',name:'3 crusty rolls (classic)', cal:495,p:15,c:90,f:6, g:180},
+      {id:'fat-roll2', emoji:'🍞',name:'2 bread rolls',            cal:330,p:10,c:60,f:4, g:120},
+      {id:'fat-cib',   emoji:'🫓',name:'Ciabatta (torn)',          cal:235,p:8, c:44,f:3, g:80},
+      {id:'fat-fren',  emoji:'🍞',name:'French bread (torn)',      cal:270,p:9, c:50,f:3, g:100},
+      {id:'fat-inj',   emoji:'🫓',name:'Injera (shredded, large)', cal:260,p:10,c:50,f:2, g:200},
+      {id:'fat-toast', emoji:'🍞',name:'Toasted white bread (2)',  cal:160,p:5, c:30,f:2, g:60},
+    ]},
+    {section:'Silsi Sauce (Essential)',items:[
+      {id:'fat-silsi', emoji:'🍅',name:'Silsi – basic (berbere tomato)',cal:140,p:3,c:18,f:6,g:200},
+      {id:'fat-silsp', emoji:'🌶',name:'Silsi – extra spicy',      cal:145,p:3, c:18,f:6, g:200},
+      {id:'fat-silsi2',emoji:'🍅',name:'Silsi – mild (less berbere)',cal:120,p:2,c:16,f:5,g:200},
+    ]},
+    {section:'Protein (optional)',items:[
+      {id:'fat-egg-s', emoji:'🍳',name:'Scrambled eggs (2)',       cal:212,p:14,c:2, f:16,g:120},
+      {id:'fat-egg-b', emoji:'🥚',name:'Boiled eggs (2)',          cal:156,p:13,c:1, f:11,g:100},
+      {id:'fat-beef',  emoji:'🥩',name:'Beef (shredded / tibs)',   cal:210,p:22,c:3, f:13,g:100},
+      {id:'fat-chick', emoji:'🍗',name:'Chicken (shredded)',       cal:165,p:31,c:0, f:4, g:100},
+      {id:'fat-qulwa', emoji:'🥩',name:'Leftover Qulwa / Tibsi',   cal:210,p:22,c:3, f:13,g:100},
+    ]},
+    {section:'Dairy / Creamy',items:[
+      {id:'fat-yog',   emoji:'🥛',name:'Plain yogurt (rug\'o)',    cal:97, p:9, c:4, f:5, g:100},
+      {id:'fat-gyog',  emoji:'🥛',name:'Greek yogurt (thick)',     cal:97, p:9, c:4, f:5, g:100},
+      {id:'fat-ayib',  emoji:'🧀',name:'Ayib – Eritrean cheese',   cal:78, p:9, c:2, f:4, g:80},
+      {id:'fat-scre',  emoji:'🥛',name:'Sour cream',               cal:60, p:1, c:2, f:6, g:30},
+    ]},
+    {section:'Garnish & Toppings',items:[
+      {id:'fat-jal',   emoji:'🌶',name:'Jalapeño rounds',          cal:4,  p:0, c:1, f:0, g:15},
+      {id:'fat-tom',   emoji:'🍅',name:'Fresh diced tomato',       cal:14, p:1, c:3, f:0, g:80},
+      {id:'fat-onion', emoji:'🧅',name:'Raw onion (garnish)',      cal:12, p:0, c:3, f:0, g:30},
+      {id:'fat-pick',  emoji:'🥒',name:'Pickled red onion',        cal:8,  p:0, c:2, f:0, g:20},
+      {id:'fat-cilant',emoji:'🌿',name:'Cilantro / parsley',       cal:4,  p:0, c:1, f:0, g:10},
+      {id:'fat-olive', emoji:'🫒',name:'Olive oil drizzle',        cal:119,p:0, c:0, f:13,g:14},
+    ]},
+  ],
+
+  lasagna:[
+    {section:'Lasagna Sheets',items:[
+      {id:'las-reg',   emoji:'🍝',name:'Regular pasta sheets (4 layers)',  cal:250,p:9, c:48,f:2, g:160},
+      {id:'las-whole', emoji:'🍝',name:'Wholemeal sheets (4 layers)',      cal:224,p:10,c:42,f:2, g:160},
+      {id:'las-fresh', emoji:'🍝',name:'Fresh pasta sheets (4 layers)',    cal:280,p:11,c:50,f:4, g:160},
+      {id:'las-gf',    emoji:'🍝',name:'Gluten-free sheets (4 layers)',    cal:240,p:4, c:52,f:2, g:160},
+    ]},
+    {section:'Sauce / Base Variation',items:[
+      {id:'las-bol',   emoji:'🥩',name:'Beef Bolognese (classic)',         cal:290,p:20,c:16,f:16,g:200},
+      {id:'las-chbol', emoji:'🍗',name:'Chicken Bolognese',                cal:240,p:22,c:14,f:10,g:200},
+      {id:'las-veg',   emoji:'🥦',name:'Roasted vegetable sauce',         cal:130,p:4, c:18,f:5, g:200},
+      {id:'las-spin',  emoji:'🥬',name:'Spinach & ricotta (no meat)',      cal:180,p:10,c:12,f:11,g:200},
+      {id:'las-shrimp',emoji:'🦐',name:'Shrimp & white wine sauce',        cal:175,p:18,c:10,f:7, g:200},
+      {id:'las-mush',  emoji:'🍄',name:'Mushroom & truffle sauce',         cal:145,p:5, c:12,f:9, g:200},
+      {id:'las-tuna',  emoji:'🐟',name:'Tuna & tomato sauce',              cal:160,p:16,c:14,f:4, g:200},
+      {id:'las-saus',  emoji:'🌭',name:'Beef sausage & tomato',            cal:280,p:16,c:15,f:17,g:200},
+    ]},
+    {section:'Béchamel / White Sauce',items:[
+      {id:'las-bec',   emoji:'🧈',name:'Classic béchamel (full)',          cal:220,p:6, c:14,f:16,g:150},
+      {id:'las-becl',  emoji:'🧈',name:'Light béchamel (low fat)',         cal:140,p:6, c:14,f:7, g:150},
+      {id:'las-crem',  emoji:'🧀',name:'Cream cheese sauce',               cal:200,p:7, c:8, f:16,g:120},
+      {id:'las-nobec', emoji:'🍅',name:'No béchamel (tomato only)',        cal:0,  p:0, c:0, f:0, g:0},
+    ]},
+    {section:'Cheese Layer',items:[
+      {id:'las-mozz',  emoji:'🧀',name:'Mozzarella (generous)',            cal:180,p:14,c:2, f:14,g:100},
+      {id:'las-parm',  emoji:'🧀',name:'Parmesan (top layer)',             cal:65, p:6, c:1, f:4, g:15},
+      {id:'las-chedd', emoji:'🧀',name:'Cheddar',                          cal:121,p:7, c:0, f:10,g:30},
+      {id:'las-ric',   emoji:'🧀',name:'Ricotta layer',                    cal:174,p:11,c:3, f:13,g:100},
+      {id:'las-3ch',   emoji:'🧀',name:'3-cheese blend (mozz+parm+ched)', cal:250,p:17,c:2, f:20,g:80},
+    ]},
+    {section:'Extra Fillings',items:[
+      {id:'las-xbeef', emoji:'🥩',name:'Extra beef mince layer',           cal:135,p:13,c:0, f:9, g:70},
+      {id:'las-xchick',emoji:'🍗',name:'Extra chicken layer',              cal:100,p:19,c:0, f:2, g:60},
+      {id:'las-xspin', emoji:'🥬',name:'Spinach layer',                    cal:23, p:3, c:4, f:0, g:100},
+      {id:'las-xmush', emoji:'🍄',name:'Mushroom layer',                   cal:22, p:3, c:3, f:0, g:100},
+      {id:'las-xzuc',  emoji:'🥒',name:'Courgette / zucchini layer',       cal:17, p:1, c:3, f:0, g:100},
+      {id:'las-xpepp', emoji:'🫑',name:'Roasted peppers',                  cal:31, p:1, c:7, f:0, g:80},
+      {id:'las-xolive',emoji:'🫒',name:'Olives',                           cal:36, p:0, c:1, f:4, g:20},
+    ]},
+    {section:'Serving',items:[
+      {id:'las-garb',  emoji:'🍞',name:'Garlic bread (1 slice)',           cal:138,p:3, c:18,f:6, g:40},
+      {id:'las-salad', emoji:'🥗',name:'Side green salad',                 cal:20, p:2, c:3, f:0, g:100},
+      {id:'las-parmt', emoji:'🧀',name:'Extra parmesan (grated on top)',   cal:65, p:6, c:1, f:4, g:15},
+    ]},
+  ],
+
+  // ── HOT PLATE ──
+  // Portions are estimated since restaurant dishes are hard to weigh.
+  // Small ≈ 150g, Medium ≈ 250g, Large ≈ 380g protein portion
+  hotplate:[
+    {section:'Chechebsa / Sizzling Plate — Pick your protein(s)',items:[
+      {id:'hp-beef-s',  emoji:'🥩',name:'Sliced beef – small plate',      cal:310,p:32,c:4, f:18,g:150},
+      {id:'hp-beef-m',  emoji:'🥩',name:'Sliced beef – medium plate',     cal:515,p:53,c:6, f:30,g:250},
+      {id:'hp-beef-l',  emoji:'🥩',name:'Sliced beef – large plate',      cal:785,p:81,c:9, f:46,g:380},
+      {id:'hp-fish-s',  emoji:'🐟',name:'Fish fillet – small plate',      cal:205,p:28,c:4, f:9, g:150},
+      {id:'hp-fish-m',  emoji:'🐟',name:'Fish fillet – medium plate',     cal:340,p:46,c:7, f:15,g:250},
+      {id:'hp-fish-l',  emoji:'🐟',name:'Fish fillet – large plate',      cal:520,p:70,c:10,f:23,g:380},
+      {id:'hp-chick-s', emoji:'🍗',name:'Chicken pieces – small plate',   cal:248,p:33,c:3, f:12,g:150},
+      {id:'hp-chick-m', emoji:'🍗',name:'Chicken pieces – medium plate',  cal:413,p:55,c:5, f:20,g:250},
+      {id:'hp-chick-l', emoji:'🍗',name:'Chicken pieces – large plate',   cal:628,p:84,c:8, f:30,g:380},
+      {id:'hp-mix-sm',  emoji:'🔥',name:'Mixed beef + fish – small',      cal:258,p:30,c:4, f:14,g:150},
+      {id:'hp-mix-mm',  emoji:'🔥',name:'Mixed beef + fish – medium',     cal:428,p:50,c:7, f:23,g:250},
+      {id:'hp-mix-bf',  emoji:'🔥',name:'Mixed beef + chicken – medium',  cal:464,p:54,c:5, f:25,g:250},
+      {id:'hp-mix-all', emoji:'🔥',name:'Mixed beef + fish + chicken – medium', cal:425,p:52,c:5, f:22,g:250},
+    ]},
+    {section:'Cooking Style',items:[
+      {id:'hp-dry',     emoji:'🫙',name:'Dry / grilled (less oil)',        cal:0,  p:0, c:0, f:0, g:0},
+      {id:'hp-butter',  emoji:'🧈',name:'Cooked in spiced butter (tesmi)', cal:130,p:0, c:0, f:14,g:15},
+      {id:'hp-oil',     emoji:'🫒',name:'Cooked in olive / veg oil',       cal:119,p:0, c:0, f:13,g:14},
+      {id:'hp-awaze',   emoji:'🌶',name:'Awaze marinade & sauce',          cal:17, p:0, c:2, f:1, g:15},
+      {id:'hp-berbere', emoji:'🌶',name:'Berbere spice crust',             cal:10, p:0, c:2, f:0, g:5},
+    ]},
+    {section:'Vegetables on the plate',items:[
+      {id:'hp-onion',   emoji:'🧅',name:'Sautéed onions',                  cal:46, p:1, c:10,f:1, g:80},
+      {id:'hp-pepper',  emoji:'🫑',name:'Sautéed bell peppers',            cal:31, p:1, c:6, f:1, g:80},
+      {id:'hp-tom',     emoji:'🍅',name:'Tomato (fresh sliced)',           cal:14, p:1, c:3, f:0, g:80},
+      {id:'hp-mush',    emoji:'🍄',name:'Mushrooms',                      cal:22, p:3, c:3, f:0, g:100},
+      {id:'hp-garlic',  emoji:'🧄',name:'Garlic (sautéed)',               cal:20, p:1, c:4, f:0, g:15},
+    ]},
+    {section:'Served with',items:[
+      {id:'hp-inj',     emoji:'🫓',name:'Injera (1 large)',                cal:260,p:10,c:50,f:2, g:200},
+      {id:'hp-inj-h',   emoji:'🫓',name:'Injera (half)',                   cal:130,p:5, c:25,f:1, g:100},
+      {id:'hp-bread',   emoji:'🍞',name:'Bread rolls (2)',                 cal:330,p:10,c:60,f:4, g:120},
+      {id:'hp-rice',    emoji:'🍚',name:'Side rice',                       cal:195,p:4, c:42,f:0, g:150},
+      {id:'hp-chips',   emoji:'🍟',name:'Side chips / fries',              cal:312,p:3, c:41,f:15,g:100},
+      {id:'hp-salad',   emoji:'🥗',name:'Side salad',                     cal:20, p:2, c:3, f:0, g:100},
+    ]},
+  ],
+};
+
+let activeMealType = 'pizza';
+let selectedIngredients = {}; // id -> ingredient object
+
+function initBuilder(){
+  // Render meal type chips
+  document.getElementById('mealTypeScroll').innerHTML = MEAL_TYPES.map(t=>
+    `<div class="meal-type-chip ${t.id===activeMealType?'active':''}" onclick="setMealType('${t.id}')">
+      <div class="mtc-icon">${t.icon}</div>
+      <div class="mtc-label">${t.label}</div>
+    </div>`
+  ).join('');
+  renderBuilderSections();
+  updateBuilderTotal();
+}
+
+function setMealType(id){
+  activeMealType = id;
+  selectedIngredients = {};
+  document.getElementById('btbPanel').classList.remove('open');
+  document.getElementById('btbExpandIcon').classList.remove('open');
+  document.querySelectorAll('.meal-type-chip').forEach((el,i)=>
+    el.classList.toggle('active', MEAL_TYPES[i].id===id)
+  );
+  renderBuilderSections();
+  updateBuilderTotal();
+}
+
+function renderBuilderSections(){
+  const sections = BUILDER_INGREDIENTS[activeMealType] || [];
+  document.getElementById('builderSections').innerHTML = sections.map(sec=>`
+    <div class="builder-card">
+      <div class="builder-section-hdr">${sec.section}</div>
+      ${sec.items.map(item=>{
+        const sel = !!selectedIngredients[item.id];
+        return`<div class="ingredient-row ${sel?'selected':''}" onclick="toggleIngredient('${item.id}','${activeMealType}')">
+          <div class="ir-check">${sel?'✓':''}</div>
+          <div class="ir-emoji">${item.emoji}</div>
+          <div class="ir-info">
+            <div class="ir-name">${item.name}</div>
+            <div class="ir-sub">${item.g}g · P:${item.p}g C:${item.c}g F:${item.f}g</div>
+          </div>
+          <div class="ir-cal">${item.cal}</div>
+        </div>`;
+      }).join('')}
+    </div>`
+  ).join('');
+}
+
+function toggleIngredient(id, mealType){
+  if(selectedIngredients[id]){
+    delete selectedIngredients[id];
+  } else {
+    // Find ingredient
+    const sections = BUILDER_INGREDIENTS[mealType]||[];
+    for(const sec of sections){
+      const item = sec.items.find(i=>i.id===id);
+      if(item){ selectedIngredients[id]={...item}; break; }
+    }
+  }
+  renderBuilderSections();
+  updateBuilderTotal();
+}
+
+function toggleBtbPanel(){
+  const panel = document.getElementById('btbPanel');
+  const icon  = document.getElementById('btbExpandIcon');
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  icon.classList.toggle('open', !isOpen);
+}
+
+function updateBuilderTotal(){
+  const items = Object.values(selectedIngredients);
+  const total = items.reduce((acc,i)=>({
+    cal:acc.cal+i.cal, p:acc.p+i.p, c:acc.c+i.c, f:acc.f+i.f
+  }),{cal:0,p:0,c:0,f:0});
+
+  document.getElementById('btbCal').textContent   = Math.round(total.cal)+' kcal';
+  document.getElementById('btbCount').textContent = items.length+' item'+(items.length!==1?'s':'');
+  document.getElementById('btbPr').textContent    = Math.round(total.p)+'g';
+  document.getElementById('btbCa').textContent    = Math.round(total.c)+'g';
+  document.getElementById('btbFa').textContent    = Math.round(total.f)+'g';
+
+  const names = items.map(i=>i.emoji+' '+i.name);
+  document.getElementById('btbIngredients').textContent = names.length
+    ? names.join('  ·  ')
+    : 'No ingredients selected yet';
+}
+
+function clearBuilder(){
+  selectedIngredients = {};
+  renderBuilderSections();
+  updateBuilderTotal();
+  showToast('Cleared!');
+}
+
+function logBuilderMeal(){
+  const items = Object.values(selectedIngredients);
+  if(!items.length){ showToast('⚠ Pick at least one ingredient'); return; }
+  const total = items.reduce((acc,i)=>({
+    cal:acc.cal+i.cal, p:acc.p+i.p, c:acc.c+i.c, f:acc.f+i.f, g:acc.g+i.g
+  }),{cal:0,p:0,c:0,f:0,g:0});
+
+  const mealType = MEAL_TYPES.find(t=>t.id===activeMealType);
+  const name = mealType.icon+' '+mealType.label+' ('+items.length+' items)';
+
+  // Open meal picker modal for which meal slot to add to
+  pendingBuilderEntry = {
+    name, emoji: mealType.icon,
+    cal100: Math.round(total.cal/(total.g||100)*100),
+    p100:   Math.round(total.p  /(total.g||100)*100),
+    c100:   Math.round(total.c  /(total.g||100)*100),
+    f100:   Math.round(total.f  /(total.g||100)*100),
+    grams:  total.g,
+    photo:  null
+  };
+  // Show quick meal slot picker
+  openBuilderLogModal(name, Math.round(total.cal));
+}
+
+let pendingBuilderEntry = null;
+
+function openBuilderLogModal(name, cal){
+  const overlay = document.getElementById('addModal');
+  document.getElementById('mTitle').textContent = 'Log Meal';
+  document.getElementById('mSub').textContent   = name+' · '+cal+' kcal total';
+  document.getElementById('photoWrap').classList.remove('has-photo');
+  // Hide unit toggle & gram input — we already have totals
+  document.getElementById('gramSec').classList.remove('show');
+  document.getElementById('srvSec').classList.remove('show');
+  document.querySelector('.unit-toggle').style.display='none';
+  document.querySelector('.photo-row').style.display='none';
+  document.getElementById('mealPicker').innerHTML = MEALS.map(m=>
+    `<button class="meal-pick-btn ${m===pendingMeal?'sel':''}" onclick="selMeal('${m}',this)">${MEAL_ICONS[m]} ${m}</button>`
+  ).join('');
+  overlay.classList.add('open');
+  // Override confirm to log builder entry
+  document.getElementById('addModal').dataset.mode = 'builder';
+}
+
+// Patch confirmAdd to handle builder mode
+const _origConfirmAdd = confirmAdd;
+function confirmAdd(){
+  const mode = document.getElementById('addModal').dataset.mode;
+  if(mode === 'builder'){
+    if(!pendingBuilderEntry) return;
+    state.log[pendingMeal].push({...pendingBuilderEntry});
+    saveState(); render();
+    document.getElementById('addModal').classList.remove('open');
+    document.getElementById('addModal').dataset.mode = '';
+    // Restore modal UI
+    document.querySelector('.unit-toggle').style.display='';
+    document.querySelector('.photo-row').style.display='';
+    document.getElementById('gramSec').classList.add('show');
+    showToast('🍽 Meal logged to '+pendingMeal+'!');
+    clearBuilder();
+    return;
+  }
+  _origConfirmAdd();
+}
+
+// Restore modal UI when closed
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{
+  if(e.target===el){
+    el.classList.remove('open');
+    el.dataset.mode='';
+    document.querySelector('.unit-toggle').style.display='';
+    document.querySelector('.photo-row').style.display='';
+    document.getElementById('gramSec').classList.add('show');
+  }
+}));
+
+// ── INIT ──
+loadState();
+const _d=new Date();
+document.getElementById('datePill').textContent=_d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+buildCats();filterFoods();render();loadGoalInputs();loadNotifSettings();updatePermBanner();scheduleAll();
+initBuilder();updateLastBackupInfo();
+
+// Warn if storage not available (Safari local file mode)
+if(!_checkStorage()){
+  const warn=document.createElement('div');
+  warn.style.cssText='position:fixed;top:0;left:0;right:0;z-index:800;background:rgba(244,63,94,0.92);color:white;text-align:center;padding:10px 16px;font-size:12px;font-weight:700;font-family:Outfit,sans-serif;line-height:1.5;';
+  warn.innerHTML='⚠ Data won\'t save on local files in Safari. <a href="https://tiiny.host" target="_blank" style="color:white;text-decoration:underline;">Host online</a> for full functionality.';
+  document.body.appendChild(warn);
+  setTimeout(()=>warn.remove(), 8000);
+}
+
+// ── PWA SETUP ──────────────────────────────────────────────────────────
+(function(){
+  // 1. Generate SVG icon as data URI (no emoji — pure SVG shapes)
+  const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#08060f"/><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#e879f9"/></linearGradient></defs><circle cx="256" cy="200" r="90" fill="url(#g)"/><line x1="256" y1="60" x2="256" y2="100" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><line x1="256" y1="300" x2="256" y2="340" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><line x1="116" y1="200" x2="156" y2="200" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><line x1="356" y1="200" x2="396" y2="200" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><line x1="157" y1="101" x2="185" y2="129" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><line x1="327" y1="271" x2="355" y2="299" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><line x1="355" y1="101" x2="327" y2="129" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><line x1="185" y1="271" x2="157" y2="299" stroke="#e879f9" stroke-width="16" stroke-linecap="round"/><rect x="156" y="370" width="200" height="36" rx="18" fill="url(#g)"/><rect x="186" y="420" width="140" height="28" rx="14" fill="rgba(168,85,247,0.5)"/></svg>`;
+  const iconDataUri = 'data:image/svg+xml,' + encodeURIComponent(iconSvg);
+
+  // Set apple touch icon
+  document.getElementById('appleIcon').href = iconDataUri;
+
+  // 2. Create and inject manifest as blob URL
+  const manifest = {
+    name: 'Summer Goals',
+    short_name: 'SummerGoals',
+    description: 'Offline calorie tracker — Eritrea Edition',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#08060f',
+    theme_color: '#a855f7',
+    icons: [
+      { src: iconDataUri, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: iconDataUri, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+    ]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const manifestUrl = URL.createObjectURL(manifestBlob);
+  document.getElementById('pwaManifest').href = manifestUrl;
+
+  // Service worker requires a real hosted file — skipped for single-file mode
+
+  // 4. PWA install prompt (Android Chrome)
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const b = document.getElementById('installBanner');
+    if(b) b.style.display = 'flex';
+  });
+
+  window.addEventListener('appinstalled', () => {
+    const b = document.getElementById('installBanner');
+    if(b) b.style.display = 'none';
+    deferredPrompt = null;
+  });
+
+  // Use DOMContentLoaded to safely attach events after HTML is parsed
+  window.addEventListener('DOMContentLoaded', () => {
+    const installBtn     = document.getElementById('installBtn');
+    const installDismiss = document.getElementById('installDismiss');
+    const iosHintDismiss = document.getElementById('iosHintDismiss');
+    const installBanner  = document.getElementById('installBanner');
+    const iosHint        = document.getElementById('iosHint');
+
+    if(installBtn) installBtn.addEventListener('click', async () => {
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if(outcome === 'accepted' && installBanner) installBanner.style.display = 'none';
+        deferredPrompt = null;
+      }
+    });
+
+    if(installDismiss) installDismiss.addEventListener('click', () => {
+      if(installBanner) installBanner.style.display = 'none';
+      storageSet('pwa_dismissed','1');
+    });
+
+    // Don't show if already dismissed
+    if(storageGet('pwa_dismissed') && installBanner) installBanner.style.display = 'none';
+
+    // 5. iOS install hint
+    const isIos        = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true;
+    const iosDismissed = storageGet('ios_hint_dismissed');
+    if(isIos && !isStandalone && !iosDismissed && iosHint){
+      iosHint.style.display = 'flex';
+    }
+
+    if(iosHintDismiss) iosHintDismiss.addEventListener('click', () => {
+      if(iosHint) iosHint.style.display = 'none';
+      storageSet('ios_hint_dismissed','1');
+    });
+  });
+
+})();
+</script>
+
+<!-- PWA Install Banner (Android Chrome) -->
+<div id="installBanner" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;z-index:600;
+  background:linear-gradient(135deg,#1a1530,#221840);border:1px solid rgba(168,85,247,0.4);
+  border-radius:16px;padding:14px 16px;align-items:center;gap:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+  <div style="font-size:28px;">☀️</div>
+  <div style="flex:1;">
+    <div style="font-size:13px;font-weight:800;color:#f0e8ff;">Install Summer Goals</div>
+    <div style="font-size:11px;color:rgba(240,232,255,0.5);margin-top:2px;">Add to home screen for offline use</div>
+  </div>
+  <button id="installBtn" style="background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:white;
+    padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+    font-family:'Outfit',sans-serif;white-space:nowrap;box-shadow:0 4px 12px rgba(168,85,247,0.4);">
+    Install
+  </button>
+  <button id="installDismiss" style="background:none;border:none;color:rgba(240,232,255,0.4);
+    font-size:20px;cursor:pointer;padding:2px 4px;line-height:1;">×</button>
+</div>
+
+<!-- iOS Safari Install Hint -->
+<div id="iosHint" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;z-index:600;
+  background:linear-gradient(135deg,#1a1530,#221840);border:1px solid rgba(168,85,247,0.4);
+  border-radius:16px;padding:14px 16px;align-items:flex-start;gap:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+  <div style="font-size:26px;flex-shrink:0;">📲</div>
+  <div style="flex:1;">
+    <div style="font-size:13px;font-weight:800;color:#f0e8ff;margin-bottom:6px;">Add to Home Screen</div>
+    <div style="font-size:11px;color:rgba(240,232,255,0.55);line-height:1.6;">
+      1. Tap the <strong style="color:#c084fc;">Share button</strong> (□↑) at the bottom of Safari<br>
+      2. Scroll down and tap <strong style="color:#c084fc;">"Add to Home Screen"</strong><br>
+      3. Tap <strong style="color:#c084fc;">Add</strong> — done! Opens like a real app ✅
+    </div>
+  </div>
+  <button id="iosHintDismiss" style="background:none;border:none;color:rgba(240,232,255,0.4);
+    font-size:20px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0;">×</button>
+</div>
+
+</body>
+</html>
