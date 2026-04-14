@@ -511,7 +511,12 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
         <div class="greeting-text">☀️ Summer Goals</div>
         <div class="greeting-sub">Eritrea Edition</div>
       </div>
-      <div class="date-chip" id="datePill"></div>
+      <!-- Date navigator -->
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onclick="shiftViewDate(-1)" style="background:rgba(168,85,247,0.1);border:1px solid var(--border);color:var(--purple3);width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;">‹</button>
+        <div class="date-chip" id="datePill" style="cursor:pointer;" onclick="goToToday()"></div>
+        <button onclick="shiftViewDate(1)" id="dateFwdBtn" style="background:rgba(168,85,247,0.1);border:1px solid var(--border);color:var(--purple3);width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;">›</button>
+      </div>
     </div>
   </div>
 
@@ -603,10 +608,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
         <div style="font-size:11px;color:var(--dimmed);">/ <span id="stepsGoalLbl">10,000</span> steps</div>
       </div>
       <div class="steps-bar"><div class="steps-bar-fill" id="stepsBar" style="width:0%"></div></div>
-      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-        <button class="steps-edit-btn" onclick="importStepsFromHealth()" id="healthImportBtn" style="display:none;">📲 Import from Health</button>
-        <button class="steps-edit-btn" onclick="openStepsModal()">✏ Enter manually</button>
-      </div>
+      <button class="steps-edit-btn" onclick="openStepsModal()">✏ Enter steps</button>
     </div>
     <div class="steps-cals">
       <div class="steps-cals-val" id="stepsCals">+0</div>
@@ -817,28 +819,40 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
         <div class="notif-card">
           <div class="notif-card-top">
             <div class="notif-icon">🌅</div>
-            <div class="notif-info"><div class="notif-name">Breakfast</div><div class="notif-time">8:00 AM</div></div>
+            <div class="notif-info">
+              <div class="notif-name">Breakfast</div>
+              <input type="time" id="time-breakfast" value="08:00" onchange="saveNotifSettings()" style="background:rgba(168,85,247,0.1);border:1px solid var(--border);border-radius:8px;color:var(--purple3);font-family:'Space Mono',monospace;font-size:12px;padding:3px 8px;margin-top:3px;outline:none;">
+            </div>
             <label class="notif-toggle"><input type="checkbox" id="tog-breakfast" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
           </div>
         </div>
         <div class="notif-card">
           <div class="notif-card-top">
             <div class="notif-icon">☀️</div>
-            <div class="notif-info"><div class="notif-name">Lunch</div><div class="notif-time">1:00 PM</div></div>
+            <div class="notif-info">
+              <div class="notif-name">Lunch</div>
+              <input type="time" id="time-lunch" value="13:00" onchange="saveNotifSettings()" style="background:rgba(168,85,247,0.1);border:1px solid var(--border);border-radius:8px;color:var(--purple3);font-family:'Space Mono',monospace;font-size:12px;padding:3px 8px;margin-top:3px;outline:none;">
+            </div>
             <label class="notif-toggle"><input type="checkbox" id="tog-lunch" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
           </div>
         </div>
         <div class="notif-card">
           <div class="notif-card-top">
             <div class="notif-icon">🌆</div>
-            <div class="notif-info"><div class="notif-name">Dinner</div><div class="notif-time">7:00 PM</div></div>
+            <div class="notif-info">
+              <div class="notif-name">Dinner</div>
+              <input type="time" id="time-dinner" value="19:00" onchange="saveNotifSettings()" style="background:rgba(168,85,247,0.1);border:1px solid var(--border);border-radius:8px;color:var(--purple3);font-family:'Space Mono',monospace;font-size:12px;padding:3px 8px;margin-top:3px;outline:none;">
+            </div>
             <label class="notif-toggle"><input type="checkbox" id="tog-dinner" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
           </div>
         </div>
         <div class="notif-card">
           <div class="notif-card-top">
             <div class="notif-icon">🌙</div>
-            <div class="notif-info"><div class="notif-name">Daily Summary</div><div class="notif-time">9:00 PM</div></div>
+            <div class="notif-info">
+              <div class="notif-name">Daily Summary</div>
+              <input type="time" id="time-summary" value="21:00" onchange="saveNotifSettings()" style="background:rgba(168,85,247,0.1);border:1px solid var(--border);border-radius:8px;color:var(--purple3);font-family:'Space Mono',monospace;font-size:12px;padding:3px 8px;margin-top:3px;outline:none;">
+            </div>
             <label class="notif-toggle"><input type="checkbox" id="tog-summary" onchange="saveNotifSettings()"><span class="ntoggle-slider"></span></label>
           </div>
         </div>
@@ -1454,22 +1468,23 @@ function render(){
       ${items.length===0
         ? '<div class="meal-empty-row">Nothing logged yet</div>'
         : items.map((item,idx)=>`
-          <div class="meal-log-item">
+          <div class="meal-log-item" onclick="showItemDetail('${meal}',${idx})" style="cursor:pointer;">
             ${item.photo
-              ? `<img class="mli-thumb" src="${item.photo}" onclick="document.getElementById('lbImg').src='${item.photo}';document.getElementById('lightbox').classList.add('open')">`
+              ? `<img class="mli-thumb" src="${item.photo}" onclick="event.stopPropagation();document.getElementById('lbImg').src='${item.photo}';document.getElementById('lightbox').classList.add('open')">`
               : `<div class="mli-placeholder">${item.emoji}</div>`}
             <div class="mli-info">
               <div class="mli-name">${item.name}</div>
               <div class="mli-sub">${item.grams}g · P:${Math.round(item.p100*item.grams/100)}g C:${Math.round(item.c100*item.grams/100)}g F:${Math.round(item.f100*item.grams/100)}g</div>
             </div>
             <div class="mli-cal">${Math.round(item.cal100*item.grams/100)}</div>
-            <button class="mli-rm" onclick="removeItem('${meal}',${idx})">×</button>
+            <button class="mli-rm" onclick="event.stopPropagation();removeItem('${meal}',${idx})">×</button>
           </div>`).join('')}
-      <button class="meal-add-btn" onclick="pendingMeal='${meal}';showScreen('log',document.getElementById('nav-log'))">+ Add to ${meal}</button>
+      <button class="meal-add-btn" onclick="pendingMeal='${meal}';showScreen('log',document.getElementById('nav-log'));if(!isViewingToday())showToast('Adding to ${meal} on '+getViewDate().toLocaleDateString('en-US',{month:\'short\',day:\'numeric\'}))">+ Add to ${meal}</button>
     `;
     con.appendChild(div);
   });
 }
+
 
 // ── FOOD GRID ──
 let activeCat='All';
@@ -1655,7 +1670,170 @@ function saveCustomFood(){
   ['cName','cEmoji','cCal','cPr','cCa2','cFa'].forEach(id=>document.getElementById(id).value='');
 }
 
-// ── BACKUP & RESTORE ─────────────────────────────────────────────────
+// ── VIEW DATE (browse past/future days) ──────────────────────────────
+let viewDateOffset = 0; // 0 = today, -1 = yesterday, +1 = tomorrow
+
+function getViewDate(){
+  const d = new Date();
+  d.setDate(d.getDate() + viewDateOffset);
+  return d;
+}
+
+function getViewDateKey(){
+  return getViewDate().toDateString();
+}
+
+function isViewingToday(){
+  return viewDateOffset === 0;
+}
+
+function shiftViewDate(delta){
+  viewDateOffset += delta;
+  updateDatePill();
+  renderViewDate();
+}
+
+function goToToday(){
+  viewDateOffset = 0;
+  updateDatePill();
+  renderViewDate();
+}
+
+function updateDatePill(){
+  const d = getViewDate();
+  const isToday = isViewingToday();
+  const label = isToday ? 'Today · ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+    : viewDateOffset === -1 ? 'Yesterday · ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+    : viewDateOffset === 1  ? 'Tomorrow · '  + d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+    : d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const pill = document.getElementById('datePill');
+  if(pill) pill.textContent = label;
+  // Dim forward button if too far in future
+  const fwd = document.getElementById('dateFwdBtn');
+  if(fwd) fwd.style.opacity = viewDateOffset >= 7 ? '0.3' : '1';
+}
+
+function getViewLog(){
+  if(isViewingToday()) return state.log;
+  const key = getViewDateKey();
+  // Check history for past days; use a temp object for future days
+  if(state.otherDays && state.otherDays[key]) return state.otherDays[key];
+  return {Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
+}
+
+function renderViewDate(){
+  if(isViewingToday()){
+    render();
+    return;
+  }
+  // For other days: show simplified log
+  const log  = getViewLog();
+  const t    = calcTotals(log);
+  const g    = state.goal;
+  const net  = t.cal;
+  const remaining = Math.max(0, g.cal - net);
+
+  // Update ring
+  const pct = Math.min(net/g.cal, 1);
+  const ring = document.getElementById('ringFill');
+  if(ring){ ring.style.strokeDashoffset=188.5-(pct*188.5); ring.classList.toggle('over',net>g.cal); }
+
+  const el = id => document.getElementById(id);
+  if(el('calRemaining')) el('calRemaining').textContent = remaining;
+  if(el('calGoalDisp'))  el('calGoalDisp').textContent  = g.cal;
+  if(el('calConsumed'))  el('calConsumed').textContent  = net;
+
+  // Macros
+  const mp = (v,max) => Math.min(Math.round(v/max*100),100);
+  if(el('valPr')){ el('valPr').textContent=t.pr+'g'; el('pctPr').textContent=mp(t.pr,g.pr)+'%'; el('barPr').style.width=mp(t.pr,g.pr)+'%'; }
+  if(el('valCa')){ el('valCa').textContent=t.ca+'g'; el('pctCa').textContent=mp(t.ca,g.ca)+'%'; el('barCa').style.width=mp(t.ca,g.ca)+'%'; }
+  if(el('valFa')){ el('valFa').textContent=t.fa+'g'; el('pctFa').textContent=mp(t.fa,g.fa)+'%'; el('barFa').style.width=mp(t.fa,g.fa)+'%'; }
+
+  // Meal log
+  const con = el('mealLogSection');
+  if(!con) return;
+  con.innerHTML = MEALS.map(meal=>{
+    const items = log[meal]||[];
+    const mCal  = items.reduce((s,i)=>s+i.cal100*i.grams/100,0);
+    return`<div class="meal-log-card">
+      <div class="meal-log-header">
+        <div class="mlh-left"><span class="mlh-icon">${MEAL_ICONS[meal]}</span><span class="mlh-name">${meal}</span></div>
+        <span class="mlh-cal">${Math.round(mCal)} kcal</span>
+      </div>
+      ${items.length ? items.map((item,idx)=>`
+        <div class="meal-log-item" onclick="showItemDetail('${meal}',${idx},false)" style="cursor:pointer;">
+          ${item.photo ? `<img class="mli-thumb" src="${item.photo}">` : `<div class="mli-placeholder">${item.emoji}</div>`}
+          <div class="mli-info">
+            <div class="mli-name">${item.name}</div>
+            <div class="mli-sub">${item.grams}g · P:${Math.round(item.p100*item.grams/100)}g C:${Math.round(item.c100*item.grams/100)}g F:${Math.round(item.f100*item.grams/100)}g</div>
+          </div>
+          <div class="mli-cal">${Math.round(item.cal100*item.grams/100)}</div>
+          <button class="mli-rm" onclick="event.stopPropagation();removeItemFromDate('${meal}',${idx})">×</button>
+        </div>`).join('')
+      : `<div style="padding:12px 14px;font-size:12px;color:var(--dimmed);">Nothing logged</div>`}
+    </div>`;
+  }).join('');
+}
+
+function removeItemFromDate(meal, idx){
+  if(isViewingToday()){
+    removeItem(meal, idx);
+    return;
+  }
+  const key = getViewDateKey();
+  if(!state.otherDays) state.otherDays={};
+  if(!state.otherDays[key]) return;
+  state.otherDays[key][meal].splice(idx,1);
+  // Update history cal for that date
+  const t = calcTotals(state.otherDays[key]);
+  if(!state.history) state.history={};
+  state.history[key]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
+  saveState();
+  renderViewDate();
+}
+
+// ── ITEM DETAIL MODAL ─────────────────────────────────────────────────
+function showItemDetail(meal, idx, isToday=true){
+  const log  = isViewingToday() ? state.log : getViewLog();
+  const item = (log[meal]||[])[idx];
+  if(!item) return;
+  const cal = Math.round(item.cal100*item.grams/100);
+  const pr  = Math.round(item.p100 *item.grams/100);
+  const ca  = Math.round(item.c100 *item.grams/100);
+  const fa  = Math.round(item.f100 *item.grams/100);
+
+  document.getElementById('idEmoji').textContent = item.emoji||'🍽';
+  document.getElementById('idName').textContent  = item.name;
+  document.getElementById('idMeal').textContent  = meal;
+  document.getElementById('idCal').textContent   = cal;
+  document.getElementById('idPr').textContent    = pr+'g';
+  document.getElementById('idCa').textContent    = ca+'g';
+  document.getElementById('idFa').textContent    = fa+'g';
+
+  // Details
+  const perG = item.cal100;
+  const lines = [
+    '📏 Amount: '+item.grams+'g',
+    '🔥 '+item.cal100+' kcal per 100g',
+    '💪 '+item.p100+'g protein / 100g',
+    '⚡ '+item.c100+'g carbs / 100g',
+    '🫙 '+item.f100+'g fat / 100g',
+  ];
+  // Look up description from DB
+  const dbFood = DB.find(f=>f.name===item.name);
+  if(dbFood && dbFood.desc) lines.push('📝 '+dbFood.desc);
+  document.getElementById('idDetails').innerHTML = lines.map(l=>`<div>${l}</div>`).join('');
+
+  // Photo
+  const photoWrap = document.getElementById('idPhotoWrap');
+  const photoEl   = document.getElementById('idPhoto');
+  if(item.photo){ photoWrap.style.display='block'; photoEl.src=item.photo; }
+  else { photoWrap.style.display='none'; photoEl.src=''; }
+
+  document.getElementById('itemDetailModal').classList.add('open');
+}
+
+
 function exportBackup(){
   try{
     const backup={version:1,exportedAt:new Date().toISOString(),appName:'Summer Goals',state};
@@ -1910,23 +2088,13 @@ function showHealthGuideModal(){
   ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
 }
 
-function initHealthButton(){
-  const btn=document.getElementById('healthImportBtn');
-  if(btn) btn.style.display='inline-flex';
-}
+function initHealthButton(){} // removed — auto-sync not supported in browsers
 
 // ── MODALS CLOSE ──
 document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
 
 // ── NOTIFICATIONS ──
 const NOTIF_SUPPORTED=(typeof Notification!=='undefined');
-const NOTIF_SCHEDULES=[
-  {id:'breakfast',hour:8, min:0,title:'🌅 Log your breakfast!',body:"Don't forget to track your morning meal."},
-  {id:'lunch',    hour:13,min:0,title:'☀️ Lunch time — log it!',body:'Time to log your injera & tsebhi!'},
-  {id:'dinner',   hour:19,min:0,title:'🌆 Log your dinner!',body:"Evening meal — don't let it go untracked."},
-  {id:'summary',  hour:21,min:0,title:'🌙 Daily Summary',body:null},
-];
-let _notifTimers={};
 
 function updatePermBanner(){
   const banner=document.getElementById('permBanner'); if(!banner) return;
@@ -1961,47 +2129,106 @@ async function requestPermission(){
   }catch(e){showToast('⚠ Could not request permission');}
 }
 function saveNotifSettings(){
-  const s={
-    breakfast:document.getElementById('tog-breakfast').checked,
-    lunch:document.getElementById('tog-lunch').checked,
-    dinner:document.getElementById('tog-dinner').checked,
-    summary:document.getElementById('tog-summary').checked,
+  const getTime = id => {
+    const el = document.getElementById('time-'+id);
+    return el ? el.value : null;
   };
-  storageSet('sg_notif',JSON.stringify(s));scheduleAll();showToast('🔔 Reminders updated');
+  const s={
+    breakfast: document.getElementById('tog-breakfast').checked,
+    lunch:     document.getElementById('tog-lunch').checked,
+    dinner:    document.getElementById('tog-dinner').checked,
+    summary:   document.getElementById('tog-summary').checked,
+    times:{
+      breakfast: getTime('breakfast') || '08:00',
+      lunch:     getTime('lunch')     || '13:00',
+      dinner:    getTime('dinner')    || '19:00',
+      summary:   getTime('summary')   || '21:00',
+    }
+  };
+  storageSet('sg_notif',JSON.stringify(s));
+  scheduleAll();
+  showToast('🔔 Reminders saved');
 }
+
 function loadNotifSettings(){
   try{
     const s=JSON.parse(storageGet('sg_notif')||'null');
-    if(s) ['breakfast','lunch','dinner','summary'].forEach(k=>{const el=document.getElementById('tog-'+k);if(el)el.checked=!!s[k];});
+    if(s){
+      ['breakfast','lunch','dinner','summary'].forEach(k=>{
+        const tog=document.getElementById('tog-'+k);
+        if(tog) tog.checked=!!s[k];
+        if(s.times && s.times[k]){
+          const timeEl=document.getElementById('time-'+k);
+          if(timeEl) timeEl.value=s.times[k];
+        }
+      });
+    }
   }catch(e){}
 }
+
 function getNotifSettings(){try{return JSON.parse(storageGet('sg_notif')||'{}');}catch(e){return{};}}
+
+function _parseTime(timeStr, defaultHour, defaultMin){
+  if(!timeStr) return {hour:defaultHour, min:defaultMin};
+  const parts = timeStr.split(':');
+  return {hour:parseInt(parts[0])||defaultHour, min:parseInt(parts[1])||defaultMin};
+}
+
+const NOTIF_DEFAULTS = {
+  breakfast:{hour:8, min:0},
+  lunch:    {hour:13,min:0},
+  dinner:   {hour:19,min:0},
+  summary:  {hour:21,min:0},
+};
+
+const NOTIF_META = [
+  {id:'breakfast', title:'🌅 Log your breakfast!',   body:"Don't forget to track your morning meal."},
+  {id:'lunch',     title:'☀️ Lunch time — log it!',  body:'Time to log your injera & tsebhi!'},
+  {id:'dinner',    title:'🌆 Log your dinner!',       body:"Evening meal — don't let it go untracked."},
+  {id:'summary',   title:'🌙 Daily Summary',          body:null},
+];
+
+let _notifTimers={};
+
 function scheduleAll(){
   if(!NOTIF_SUPPORTED||Notification.permission!=='granted') return;
   try{
-    Object.values(_notifTimers).forEach(t=>clearTimeout(t)); _notifTimers={};
-    const s=getNotifSettings(),now=new Date();
-    NOTIF_SCHEDULES.forEach(n=>{
+    Object.values(_notifTimers).forEach(t=>clearTimeout(t));
+    _notifTimers={};
+    const s=getNotifSettings();
+    const now=new Date();
+    NOTIF_META.forEach(n=>{
       if(!s[n.id]) return;
-      const fire=new Date(); fire.setHours(n.hour,n.min,0,0);
+      const def=NOTIF_DEFAULTS[n.id];
+      const {hour,min}=_parseTime(s.times&&s.times[n.id], def.hour, def.min);
+      const fire=new Date();
+      fire.setHours(hour,min,0,0);
       if(fire<=now) fire.setDate(fire.getDate()+1);
-      _notifTimers[n.id]=setTimeout(()=>fireNotif(n),fire-now);
+      const ms=fire-now;
+      _notifTimers[n.id]=setTimeout(()=>fireNotif({...n,hour,min}),ms);
     });
   }catch(e){}
 }
+
 function fireNotif(n){
   if(!NOTIF_SUPPORTED||Notification.permission!=='granted') return;
   try{
     let body=n.body;
     if(n.id==='summary'){
       const t=getTotals(),g=state.goal,rem=g.cal-t.cal;
-      body=t.cal===0?"You haven't logged anything today. Start tracking tomorrow! 💪"
+      body=t.cal===0?"You haven't logged anything today 💪"
         :rem>0?`You logged ${t.cal} kcal — ${rem} under goal. Great work! 💜`
         :`You logged ${t.cal} kcal — ${Math.abs(rem)} over goal. Balance it tomorrow! 💪`;
     }
     new Notification(n.title,{body,tag:n.id});
+    // Re-schedule for next day using same custom time
     const s=getNotifSettings();
-    if(s[n.id]){const tm=new Date();tm.setDate(tm.getDate()+1);tm.setHours(n.hour,n.min,0,0);_notifTimers[n.id]=setTimeout(()=>fireNotif(n),tm-new Date());}
+    if(s[n.id]){
+      const tm=new Date();
+      tm.setDate(tm.getDate()+1);
+      tm.setHours(n.hour,n.min,0,0);
+      _notifTimers[n.id]=setTimeout(()=>fireNotif(n),tm-new Date());
+    }
   }catch(e){}
 }
 function sendTestNotif(){
@@ -2037,56 +2264,94 @@ const MEAL_TYPES = [
 const BUILDER_INGREDIENTS = {
   smoothie:[
     {section:'Liquid Base',items:[
-      {id:'sm-milk',   emoji:'🥛',name:'Whole milk',              cal:61, p:3, c:5, f:3, g:250},
-      {id:'sm-alm',    emoji:'🥛',name:'Almond milk (unsweetened)',cal:15, p:1, c:1, f:1, g:250},
-      {id:'sm-oat',    emoji:'🥛',name:'Oat milk',                cal:45, p:1, c:7, f:2, g:250},
-      {id:'sm-water',  emoji:'💧',name:'Water',                   cal:0,  p:0, c:0, f:0, g:200},
-      {id:'sm-coco',   emoji:'🥥',name:'Coconut water',           cal:19, p:0, c:4, f:0, g:250},
-      {id:'sm-juice',  emoji:'🧃',name:'Orange juice',            cal:45, p:1, c:10,f:0, g:200},
+      // Whole milk: 61 kcal/100ml, 3.2g P, 4.8g C, 3.3g F (USDA)
+      {id:'sm-milk',   emoji:'🥛',name:'Whole milk (250ml)',              cal:153,p:8, c:12,f:8, g:250},
+      // Unsweetened almond milk: ~15 kcal/100ml
+      {id:'sm-alm',    emoji:'🥛',name:'Almond milk unsweetened (250ml)', cal:38, p:1, c:1, f:3, g:250},
+      // Oat milk: ~45 kcal/100ml
+      {id:'sm-oat',    emoji:'🥛',name:'Oat milk (250ml)',                cal:113,p:3, c:21,f:5, g:250},
+      {id:'sm-water',  emoji:'💧',name:'Water (200ml)',                   cal:0,  p:0, c:0, f:0, g:200},
+      // Coconut water: ~19 kcal/100ml
+      {id:'sm-coco',   emoji:'🥥',name:'Coconut water (250ml)',           cal:48, p:2, c:11,f:0, g:250},
+      // OJ: ~45 kcal/100ml
+      {id:'sm-juice',  emoji:'🧃',name:'Orange juice fresh (200ml)',      cal:90, p:1, c:21,f:0, g:200},
     ]},
     {section:'Fruit',items:[
-      {id:'sm-ban',    emoji:'🍌',name:'Banana',                   cal:89, p:1, c:23,f:0, g:120},
-      {id:'sm-mango',  emoji:'🥭',name:'Mango',                   cal:60, p:1, c:15,f:0, g:150},
-      {id:'sm-straw',  emoji:'🍓',name:'Strawberries',            cal:32, p:1, c:8, f:0, g:100},
-      {id:'sm-blue',   emoji:'🫐',name:'Blueberries',             cal:57, p:1, c:14,f:0, g:100},
-      {id:'sm-pine',   emoji:'🍍',name:'Pineapple',               cal:50, p:1, c:13,f:0, g:100},
-      {id:'sm-papaya', emoji:'🍈',name:'Papaya',                  cal:43, p:1, c:11,f:0, g:150},
-      {id:'sm-apple',  emoji:'🍎',name:'Apple',                   cal:52, p:0, c:14,f:0, g:100},
-      {id:'sm-water2', emoji:'🍉',name:'Watermelon',              cal:30, p:1, c:8, f:0, g:150},
-      {id:'sm-peach',  emoji:'🍑',name:'Peach / Mango frozen',    cal:39, p:1, c:10,f:0, g:100},
+      // Banana: 89 kcal/100g → 120g = 107 kcal ✓
+      {id:'sm-ban',    emoji:'🍌',name:'Banana (1 medium, 120g)',          cal:107,p:1, c:27,f:0, g:120},
+      // Mango: 60 kcal/100g → 150g = 90 kcal ✓
+      {id:'sm-mango',  emoji:'🥭',name:'Mango (150g)',                    cal:90, p:1, c:22,f:1, g:150},
+      // Strawberries: 32 kcal/100g ✓
+      {id:'sm-straw',  emoji:'🍓',name:'Strawberries (100g)',              cal:32, p:1, c:8, f:0, g:100},
+      // Blueberries: 57 kcal/100g ✓
+      {id:'sm-blue',   emoji:'🫐',name:'Blueberries (100g)',               cal:57, p:1, c:14,f:0, g:100},
+      // Pineapple: 50 kcal/100g ✓
+      {id:'sm-pine',   emoji:'🍍',name:'Pineapple (100g)',                 cal:50, p:1, c:13,f:0, g:100},
+      // Papaya: 43 kcal/100g → 150g = 65 kcal ✓
+      {id:'sm-papaya', emoji:'🍈',name:'Papaya (150g)',                    cal:65, p:1, c:17,f:0, g:150},
+      // Apple: 52 kcal/100g → half ≈ 90g = 47 kcal ✓
+      {id:'sm-apple',  emoji:'🍎',name:'Apple (half, 90g)',                cal:47, p:0, c:13,f:0, g:90},
+      // Watermelon: 30 kcal/100g → 150g = 45 kcal ✓
+      {id:'sm-water2', emoji:'🍉',name:'Watermelon (150g)',                cal:45, p:1, c:11,f:0, g:150},
+      // Peach: 39 kcal/100g ✓
+      {id:'sm-peach',  emoji:'🍑',name:'Peach frozen (100g)',              cal:39, p:1, c:10,f:0, g:100},
     ]},
     {section:'Vegetables',items:[
-      {id:'sm-spin',   emoji:'🥬',name:'Spinach (handful)',        cal:23, p:3, c:4, f:0, g:30},
-      {id:'sm-kale',   emoji:'🥬',name:'Kale',                    cal:49, p:4, c:9, f:1, g:30},
-      {id:'sm-cuc',    emoji:'🥒',name:'Cucumber',                cal:16, p:1, c:4, f:0, g:60},
-      {id:'sm-beet',   emoji:'🫚',name:'Beetroot',                cal:43, p:2, c:10,f:0, g:80},
-      {id:'sm-carr',   emoji:'🥕',name:'Carrot',                  cal:41, p:1, c:10,f:0, g:60},
-      {id:'sm-ginger', emoji:'🫚',name:'Fresh ginger (thumb)',    cal:6,  p:0, c:1, f:0, g:10},
+      // Spinach: 23 kcal/100g → handful ≈ 30g = 7 kcal
+      {id:'sm-spin',   emoji:'🥬',name:'Spinach (handful, 30g)',           cal:7,  p:1, c:1, f:0, g:30},
+      // Kale: 49 kcal/100g → 30g = 15 kcal
+      {id:'sm-kale',   emoji:'🥬',name:'Kale (30g)',                       cal:15, p:1, c:3, f:0, g:30},
+      // Cucumber: 16 kcal/100g → 60g = 10 kcal
+      {id:'sm-cuc',    emoji:'🥒',name:'Cucumber (60g)',                   cal:10, p:0, c:2, f:0, g:60},
+      // Beetroot: 43 kcal/100g → 80g = 34 kcal
+      {id:'sm-beet',   emoji:'🫚',name:'Beetroot (80g)',                   cal:34, p:1, c:8, f:0, g:80},
+      // Carrot: 41 kcal/100g → 60g = 25 kcal
+      {id:'sm-carr',   emoji:'🥕',name:'Carrot (60g)',                     cal:25, p:1, c:6, f:0, g:60},
+      // Ginger: 80 kcal/100g → thumb ≈ 10g = 8 kcal
+      {id:'sm-ginger', emoji:'🫚',name:'Fresh ginger (thumb, 10g)',        cal:8,  p:0, c:2, f:0, g:10},
     ]},
     {section:'Protein',items:[
-      {id:'sm-whey',   emoji:'🫙',name:'Whey protein (1 scoop)',   cal:120,p:24,c:3, f:2, g:30},
-      {id:'sm-plant',  emoji:'🌱',name:'Plant protein (1 scoop)',  cal:110,p:22,c:4, f:2, g:30},
-      {id:'sm-gyog',   emoji:'🥛',name:'Greek yogurt',            cal:97, p:9, c:4, f:5, g:100},
-      {id:'sm-yog',    emoji:'🥛',name:'Plain yogurt',            cal:61, p:4, c:5, f:3, g:100},
-      {id:'sm-egg',    emoji:'🥚',name:'Boiled egg (1)',          cal:78, p:6, c:1, f:5, g:50},
+      // Whey protein: ~400 kcal/100g → 30g scoop = 120 kcal ✓
+      {id:'sm-whey',   emoji:'🫙',name:'Whey protein (1 scoop, 30g)',      cal:120,p:24,c:3, f:2, g:30},
+      // Plant protein: ~370 kcal/100g → 30g = 111 kcal
+      {id:'sm-plant',  emoji:'🌱',name:'Plant protein (1 scoop, 30g)',     cal:111,p:22,c:5, f:2, g:30},
+      // Greek yogurt: 97 kcal/100g ✓
+      {id:'sm-gyog',   emoji:'🥛',name:'Greek yogurt plain (100g)',        cal:97, p:9, c:4, f:5, g:100},
+      // Plain yogurt: 61 kcal/100g ✓
+      {id:'sm-yog',    emoji:'🥛',name:'Plain yogurt (100g)',              cal:61, p:4, c:5, f:3, g:100},
+      // Egg: 155 kcal/100g → 1 egg ≈ 50g = 78 kcal ✓
+      {id:'sm-egg',    emoji:'🥚',name:'Boiled egg (1, 50g)',              cal:78, p:6, c:1, f:5, g:50},
     ]},
     {section:'Seeds & Nuts',items:[
-      {id:'sm-flax',   emoji:'🌱',name:'Flaxseeds (ground, 1 tbsp)',cal:55,p:2, c:3, f:4, g:10},
-      {id:'sm-chia',   emoji:'🌱',name:'Chia seeds (1 tbsp)',     cal:58, p:2, c:5, f:4, g:12},
-      {id:'sm-hemp',   emoji:'🌿',name:'Hemp seeds (1 tbsp)',     cal:55, p:3, c:1, f:5, g:10},
-      {id:'sm-almond', emoji:'🥜',name:'Almonds (10)',            cal:70, p:3, c:2, f:6, g:12},
-      {id:'sm-pb',     emoji:'🥜',name:'Peanut butter (1 tbsp)',  cal:94, p:4, c:3, f:8, g:16},
-      {id:'sm-sunfl',  emoji:'🌻',name:'Sunflower seeds (1 tbsp)',cal:51, p:2, c:2, f:5, g:9},
-      {id:'sm-walnut', emoji:'🌰',name:'Walnuts (4 halves)',      cal:98, p:2, c:2, f:10,g:15},
+      // Flaxseeds: 534 kcal/100g → 1 tbsp ≈ 10g = 53 kcal
+      {id:'sm-flax',   emoji:'🌱',name:'Flaxseeds ground (1 tbsp, 10g)',   cal:53, p:2, c:3, f:4, g:10},
+      // Chia: 486 kcal/100g → 1 tbsp ≈ 12g = 58 kcal ✓
+      {id:'sm-chia',   emoji:'🌱',name:'Chia seeds (1 tbsp, 12g)',         cal:58, p:2, c:5, f:4, g:12},
+      // Hemp: 553 kcal/100g → 1 tbsp ≈ 10g = 55 kcal ✓
+      {id:'sm-hemp',   emoji:'🌿',name:'Hemp seeds (1 tbsp, 10g)',         cal:55, p:3, c:1, f:5, g:10},
+      // Almonds: 579 kcal/100g → 10 almonds ≈ 12g = 70 kcal ✓
+      {id:'sm-almond', emoji:'🥜',name:'Almonds (10 nuts, 12g)',           cal:70, p:3, c:2, f:6, g:12},
+      // PB: 588 kcal/100g → 1 tbsp ≈ 16g = 94 kcal ✓
+      {id:'sm-pb',     emoji:'🥜',name:'Peanut butter (1 tbsp, 16g)',      cal:94, p:4, c:3, f:8, g:16},
+      // Sunflower seeds: 584 kcal/100g → 1 tbsp ≈ 9g = 53 kcal
+      {id:'sm-sunfl',  emoji:'🌻',name:'Sunflower seeds (1 tbsp, 9g)',     cal:53, p:2, c:2, f:5, g:9},
+      // Walnuts: 654 kcal/100g → 4 halves ≈ 15g = 98 kcal ✓
+      {id:'sm-walnut', emoji:'🌰',name:'Walnuts (4 halves, 15g)',          cal:98, p:2, c:2, f:10,g:15},
     ]},
     {section:'Extras & Boosters',items:[
-      {id:'sm-oats',   emoji:'🥣',name:'Rolled oats (2 tbsp)',    cal:77, p:3, c:13,f:1, g:20},
-      {id:'sm-honey',  emoji:'🍯',name:'Honey (1 tsp)',           cal:21, p:0, c:6, f:0, g:7},
-      {id:'sm-coco2',  emoji:'🥥',name:'Coconut flakes (1 tbsp)',cal:35, p:0, c:2, f:3, g:7},
-      {id:'sm-cacao',  emoji:'🍫',name:'Cacao powder (1 tbsp)',   cal:12, p:1, c:3, f:1, g:5},
-      {id:'sm-avoc',   emoji:'🥑',name:'Avocado (half)',          cal:120,p:2, c:7, f:11,g:75},
-      {id:'sm-dates',  emoji:'🟤',name:'Medjool date (1)',        cal:67, p:0, c:18,f:0, g:24},
-      {id:'sm-ice',    emoji:'🧊',name:'Ice cubes',              cal:0,  p:0, c:0, f:0, g:0},
+      // Oats: 389 kcal/100g → 2 tbsp ≈ 20g = 78 kcal
+      {id:'sm-oats',   emoji:'🥣',name:'Rolled oats (2 tbsp, 20g)',        cal:78, p:3, c:13,f:1, g:20},
+      // Honey: 304 kcal/100g → 1 tsp ≈ 7g = 21 kcal ✓
+      {id:'sm-honey',  emoji:'🍯',name:'Honey (1 tsp, 7g)',                cal:21, p:0, c:6, f:0, g:7},
+      // Coconut flakes: 660 kcal/100g → 1 tbsp ≈ 7g = 46 kcal
+      {id:'sm-coco2',  emoji:'🥥',name:'Coconut flakes (1 tbsp, 7g)',      cal:46, p:0, c:2, f:4, g:7},
+      // Cacao powder: 228 kcal/100g → 1 tbsp ≈ 5g = 11 kcal
+      {id:'sm-cacao',  emoji:'🍫',name:'Cacao powder (1 tbsp, 5g)',        cal:11, p:1, c:1, f:1, g:5},
+      // Avocado: 160 kcal/100g → half ≈ 75g = 120 kcal ✓
+      {id:'sm-avoc',   emoji:'🥑',name:'Avocado (half, 75g)',              cal:120,p:2, c:7, f:11,g:75},
+      // Medjool date: 282 kcal/100g → 1 date ≈ 24g = 68 kcal
+      {id:'sm-dates',  emoji:'🟤',name:'Medjool date (1, 24g)',            cal:68, p:0, c:18,f:0, g:24},
+      {id:'sm-ice',    emoji:'🧊',name:'Ice cubes (0 kcal)',               cal:0,  p:0, c:0, f:0, g:0},
     ]},
   ],
   pizza:[
@@ -2518,20 +2783,37 @@ function setMealType(id){
 
 function renderBuilderSections(){
   const sections = BUILDER_INGREDIENTS[activeMealType] || [];
+  // Also show any custom-added items as a section
+  const customItems = Object.values(selectedIngredients).filter(i=>i.id&&i.id.startsWith('custom_'));
+  const allSections = [...sections, ...(customItems.length ? [{section:'Added Custom Items', items:[]}] : [])];
+
   document.getElementById('builderSections').innerHTML = sections.map(sec=>`
     <div class="builder-card">
       <div class="builder-section-hdr">${sec.section}</div>
       ${sec.items.map(item=>{
-        const sel = !!selectedIngredients[item.id];
-        return`<div class="ingredient-row ${sel?'selected':''}" onclick="toggleIngredient('${item.id}','${activeMealType}')">
-          <div class="ir-check">${sel?'✓':''}</div>
+        const sel = selectedIngredients[item.id];
+        const isSelected = !!sel;
+        // Use edited values if they exist
+        const displayG   = isSelected ? sel.g   : item.g;
+        const displayCal = isSelected ? sel.cal  : item.cal;
+        return`<div class="ingredient-row ${isSelected?'selected':''}" onclick="toggleIngredient('${item.id}','${activeMealType}')">
+          <div class="ir-check">${isSelected?'✓':''}</div>
           <div class="ir-emoji">${item.emoji}</div>
           <div class="ir-info">
             <div class="ir-name">${item.name}</div>
-            <div class="ir-sub">${item.g}g · P:${item.p}g C:${item.c}g F:${item.f}g</div>
+            <div class="ir-sub">${displayG}g · P:${item.p}g C:${item.c}g F:${item.f}g</div>
           </div>
-          <div class="ir-cal">${item.cal}</div>
-        </div>`;
+          <div class="ir-cal">${displayCal}</div>
+        </div>
+        ${isSelected ? `
+        <div style="background:rgba(168,85,247,0.06);padding:10px 14px;border-bottom:1px solid rgba(168,85,247,0.08);display:flex;align-items:center;gap:10px;" onclick="event.stopPropagation()">
+          <span style="font-size:11px;color:var(--dimmed);font-weight:600;white-space:nowrap;">Edit grams:</span>
+          <input type="number" value="${displayG}" min="1"
+            style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:14px;font-family:'Space Mono',monospace;color:var(--text);outline:none;text-align:center;font-weight:700;"
+            oninput="editIngredientGrams('${item.id}',this.value,${item.cal},${item.p},${item.c},${item.f})">
+          <span style="font-size:11px;color:var(--dimmed);">g</span>
+          <span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--purple3);min-width:50px;text-align:right;" id="ir-live-${item.id}">${displayCal} kcal</span>
+        </div>` : ''}`;
       }).join('')}
     </div>`
   ).join('');
@@ -2541,11 +2823,25 @@ function toggleIngredient(id, mealType){
   if(selectedIngredients[id]){
     delete selectedIngredients[id];
   } else {
-    // Find ingredient
     const sections = BUILDER_INGREDIENTS[mealType]||[];
     for(const sec of sections){
       const item = sec.items.find(i=>i.id===id);
-      if(item){ selectedIngredients[id]={...item}; break; }
+      if(item){
+        // Store both absolute values AND per-100g for gram editing
+        selectedIngredients[id]={
+          ...item,
+          cal: item.cal, // absolute (for item.g grams)
+          p:   item.p,
+          c:   item.c,
+          f:   item.f,
+          // per-100g rates (item.cal/item.g*100)
+          _cal100: item.g>0 ? Math.round(item.cal/item.g*100) : item.cal,
+          _p100:   item.g>0 ? Math.round(item.p  /item.g*100) : item.p,
+          _c100:   item.g>0 ? Math.round(item.c  /item.g*100) : item.c,
+          _f100:   item.g>0 ? Math.round(item.f  /item.g*100) : item.f,
+        };
+        break;
+      }
     }
   }
   renderBuilderSections();
@@ -2610,6 +2906,25 @@ function selectBuilderCustomFood(id){
   // Replace search with meal picker
   document.getElementById('mealPicker').innerHTML='<div style="grid-column:1/-1;font-size:11px;color:var(--dimmed);padding:4px 0;">Tap confirm to add to your builder total</div>';
   document.getElementById('addModal').dataset.mode = 'builderCustom';
+}
+
+function editIngredientGrams(id, gramsStr, calPer100, pPer100, cPer100, fPer100){
+  const g = parseFloat(gramsStr) || 0;
+  if(!selectedIngredients[id]) return;
+  const item = selectedIngredients[id];
+  // Use stored per-100g rates if available, else use passed values
+  const c100 = item._cal100 || calPer100;
+  const p100 = item._p100   || pPer100;
+  const ca100= item._c100   || cPer100;
+  const f100 = item._f100   || fPer100;
+  item.g   = Math.round(g);
+  item.cal = Math.round(c100 * g / 100);
+  item.p   = Math.round(p100 * g / 100);
+  item.c   = Math.round(ca100* g / 100);
+  item.f   = Math.round(f100 * g / 100);
+  const liveEl = document.getElementById('ir-live-'+id);
+  if(liveEl) liveEl.textContent = item.cal + ' kcal';
+  updateBuilderTotal();
 }
 
 function toggleBtbPanel(){
@@ -2735,20 +3050,34 @@ function confirmAdd(){
     return;
   }
 
-  // Normal food logging
+  // Normal food logging — respect viewed date
   if(!pendingFood) return;
   const grams=curUnit==='g'
     ?(parseFloat(document.getElementById('gramInput').value)||0)
     :pendingSrv*(pendingFood.srv||100);
   if(grams<=0){showToast('⚠ Enter a valid amount');return;}
-  state.log[pendingMeal].push({
+  const entry={
     name:pendingFood.name,emoji:pendingFood.emoji,
     cal100:pendingFood.cal,p100:pendingFood.p,c100:pendingFood.c,f100:pendingFood.f,
     grams:Math.round(grams),photo:pendingPhoto||null
-  });
-  saveState();render();
+  };
+  if(isViewingToday()){
+    state.log[pendingMeal].push(entry);
+    saveState(); render();
+  } else {
+    // Log to a past or future date
+    const key=getViewDateKey();
+    if(!state.otherDays) state.otherDays={};
+    if(!state.otherDays[key]) state.otherDays[key]={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
+    state.otherDays[key][pendingMeal].push(entry);
+    // Update history cal for that date
+    const t=calcTotals(state.otherDays[key]);
+    if(!state.history) state.history={};
+    state.history[key]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
+    saveState(); renderViewDate();
+  }
   document.getElementById('addModal').classList.remove('open');
-  showToast(pendingFood.emoji+' Added to '+pendingMeal);
+  showToast(pendingFood.emoji+' Added to '+pendingMeal+(isViewingToday()?'':' on '+getViewDate().toLocaleDateString('en-US',{month:'short',day:'numeric'})));
 }
 
 // Restore modal UI when closed via overlay tap
@@ -2761,8 +3090,7 @@ document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=
 
 // ── INIT ──
 loadState();
-const _d=new Date();
-document.getElementById('datePill').textContent=_d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+updateDatePill();
 buildCats();filterFoods();render();loadGoalInputs();loadNotifSettings();updatePermBanner();scheduleAll();
 initBuilder();updateLastBackupInfo();initHealthButton();
 
@@ -2897,6 +3225,34 @@ if(!_checkStorage()){
   </div>
   <button id="iosHintDismiss" style="background:none;border:none;color:rgba(240,232,255,0.4);
     font-size:20px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0;">×</button>
+</div>
+
+<!-- ITEM DETAIL MODAL -->
+<div class="overlay" id="itemDetailModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div id="idEmoji" style="font-size:42px;"></div>
+      <div>
+        <div id="idName" style="font-size:18px;font-weight:800;color:var(--text);"></div>
+        <div id="idMeal" style="font-size:11px;color:var(--dimmed);margin-top:2px;letter-spacing:1px;text-transform:uppercase;"></div>
+      </div>
+    </div>
+    <!-- Calorie big display -->
+    <div style="background:rgba(168,85,247,0.07);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-around;text-align:center;">
+      <div><div id="idCal" style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;background:linear-gradient(135deg,#c084fc,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></div><div style="font-size:9px;color:var(--dimmed);letter-spacing:2px;text-transform:uppercase;margin-top:3px;">kcal</div></div>
+      <div><div id="idPr" style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#93c5fd;"></div><div style="font-size:9px;color:var(--dimmed);letter-spacing:2px;text-transform:uppercase;margin-top:3px;">protein</div></div>
+      <div><div id="idCa" style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#c084fc;"></div><div style="font-size:9px;color:var(--dimmed);letter-spacing:2px;text-transform:uppercase;margin-top:3px;">carbs</div></div>
+      <div><div id="idFa" style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#f0abfc;"></div><div style="font-size:9px;color:var(--dimmed);letter-spacing:2px;text-transform:uppercase;margin-top:3px;">fat</div></div>
+    </div>
+    <!-- Details -->
+    <div id="idDetails" style="font-size:12px;color:var(--dimmed);line-height:1.7;margin-bottom:16px;"></div>
+    <!-- Photo if any -->
+    <div id="idPhotoWrap" style="display:none;margin-bottom:14px;">
+      <img id="idPhoto" style="width:100%;border-radius:12px;object-fit:cover;max-height:180px;" src="">
+    </div>
+    <button onclick="document.getElementById('itemDetailModal').classList.remove('open')" style="width:100%;background:rgba(168,85,247,0.1);border:1px solid var(--border);color:var(--purple3);padding:12px;font-size:13px;font-weight:700;border-radius:12px;cursor:pointer;font-family:'Outfit',sans-serif;">Done</button>
+  </div>
 </div>
 
 </body>
