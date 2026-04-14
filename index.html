@@ -857,6 +857,9 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
           </div>
         </div>
         <button class="test-notif-btn" onclick="sendTestNotif()">🔔 Send Test Notification</button>
+        <div style="background:rgba(168,85,247,0.06);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:11px;color:var(--dimmed);line-height:1.6;">
+          ⚠️ <strong style="color:var(--muted);">Important:</strong> Notifications only fire while the app is open on your screen. For best results, add Summer Goals to your home screen and keep it open during meal times.
+        </div>
       </div>
 
       <!-- Backup & Restore -->
@@ -2188,47 +2191,66 @@ const NOTIF_META = [
   {id:'summary',   title:'🌙 Daily Summary',          body:null},
 ];
 
-let _notifTimers={};
+// Track which notifications already fired today so they don't double-fire
+let _notifFiredToday = {};
+let _notifCheckInterval = null;
 
 function scheduleAll(){
-  if(!NOTIF_SUPPORTED||Notification.permission!=='granted') return;
-  try{
-    Object.values(_notifTimers).forEach(t=>clearTimeout(t));
-    _notifTimers={};
-    const s=getNotifSettings();
-    const now=new Date();
-    NOTIF_META.forEach(n=>{
-      if(!s[n.id]) return;
-      const def=NOTIF_DEFAULTS[n.id];
-      const {hour,min}=_parseTime(s.times&&s.times[n.id], def.hour, def.min);
-      const fire=new Date();
-      fire.setHours(hour,min,0,0);
-      if(fire<=now) fire.setDate(fire.getDate()+1);
-      const ms=fire-now;
-      _notifTimers[n.id]=setTimeout(()=>fireNotif({...n,hour,min}),ms);
-    });
-  }catch(e){}
+  if(!NOTIF_SUPPORTED || Notification.permission !== 'granted') return;
+  // Clear any existing interval
+  if(_notifCheckInterval) clearInterval(_notifCheckInterval);
+  // Reset fired tracker at start of each new day
+  const todayKey = new Date().toDateString();
+  if(storageGet('sg_notif_day') !== todayKey){
+    _notifFiredToday = {};
+    storageSet('sg_notif_day', todayKey);
+  } else {
+    try{ _notifFiredToday = JSON.parse(storageGet('sg_notif_fired')||'{}'); }catch(e){ _notifFiredToday={}; }
+  }
+  // Check every 30 seconds whether it's time to fire a notification
+  _notifCheckInterval = setInterval(checkNotifTime, 30000);
+  checkNotifTime(); // also check immediately on load
+}
+
+function checkNotifTime(){
+  if(!NOTIF_SUPPORTED || Notification.permission !== 'granted') return;
+  const s = getNotifSettings();
+  const now = new Date();
+  const todayKey = now.toDateString();
+  // Reset fired tracker on new day
+  if(storageGet('sg_notif_day') !== todayKey){
+    _notifFiredToday = {};
+    storageSet('sg_notif_day', todayKey);
+    storageSet('sg_notif_fired', '{}');
+  }
+  NOTIF_META.forEach(n=>{
+    if(!s[n.id]) return; // not enabled
+    if(_notifFiredToday[n.id]) return; // already fired today
+    const def = NOTIF_DEFAULTS[n.id];
+    const {hour, min} = _parseTime(s.times && s.times[n.id], def.hour, def.min);
+    const nowH = now.getHours(), nowM = now.getMinutes();
+    // Fire if we're within a 2-minute window of the target time
+    const targetMins = hour * 60 + min;
+    const nowMins    = nowH  * 60 + nowM;
+    if(nowMins >= targetMins && nowMins <= targetMins + 2){
+      fireNotif({...n, hour, min});
+      _notifFiredToday[n.id] = true;
+      storageSet('sg_notif_fired', JSON.stringify(_notifFiredToday));
+    }
+  });
 }
 
 function fireNotif(n){
-  if(!NOTIF_SUPPORTED||Notification.permission!=='granted') return;
+  if(!NOTIF_SUPPORTED || Notification.permission !== 'granted') return;
   try{
-    let body=n.body;
-    if(n.id==='summary'){
-      const t=getTotals(),g=state.goal,rem=g.cal-t.cal;
-      body=t.cal===0?"You haven't logged anything today 💪"
-        :rem>0?`You logged ${t.cal} kcal — ${rem} under goal. Great work! 💜`
-        :`You logged ${t.cal} kcal — ${Math.abs(rem)} over goal. Balance it tomorrow! 💪`;
+    let body = n.body;
+    if(n.id === 'summary'){
+      const t=getTotals(), g=state.goal, rem=g.cal-t.cal;
+      body = t.cal===0 ? "You haven't logged anything today 💪"
+        : rem>0 ? `You logged ${t.cal} kcal — ${rem} under goal. Great work! 💜`
+        : `You logged ${t.cal} kcal — ${Math.abs(rem)} over goal. Balance it tomorrow! 💪`;
     }
-    new Notification(n.title,{body,tag:n.id});
-    // Re-schedule for next day using same custom time
-    const s=getNotifSettings();
-    if(s[n.id]){
-      const tm=new Date();
-      tm.setDate(tm.getDate()+1);
-      tm.setHours(n.hour,n.min,0,0);
-      _notifTimers[n.id]=setTimeout(()=>fireNotif(n),tm-new Date());
-    }
+    new Notification(n.title, {body, tag:n.id});
   }catch(e){}
 }
 function sendTestNotif(){
