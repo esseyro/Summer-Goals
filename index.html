@@ -1358,17 +1358,23 @@ function loadState(){
   try{
     const s=JSON.parse(storageGet('sg_state')||'null');
     if(s){
-      // Save today to history before resetting if new day
+      // When a new day starts, archive yesterday's full log before resetting
       if(s.date && s.date!==new Date().toDateString()){
-        if(!s.history) s.history={};
+        if(!s.history)   s.history={};
+        if(!s.otherDays) s.otherDays={};
         const t=calcTotals(s.log);
+        // Save calorie summary to history
         s.history[s.date]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
+        // Save full item-level log to otherDays so we can browse it later
+        s.otherDays[s.date]=JSON.parse(JSON.stringify(s.log));
+        // Reset today
         s.log={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
         s.steps=0;
         s.date=new Date().toDateString();
       }
       state={...state,...s};
-      if(!state.history) state.history={};
+      if(!state.history)   state.history={};
+      if(!state.otherDays) state.otherDays={};
     }
   }catch(e){}
 }
@@ -1725,69 +1731,91 @@ function getViewLog(){
 }
 
 function renderViewDate(){
-  if(isViewingToday()){
-    render();
-    return;
-  }
-  // For other days: show simplified log
-  const log  = getViewLog();
-  const t    = calcTotals(log);
-  const g    = state.goal;
-  const net  = t.cal;
+  if(isViewingToday()){ render(); return; }
+
+  const log = getViewLog();
+  const t   = calcTotals(log);
+  const g   = state.goal;
+  const net = t.cal; // no steps bonus for other days
   const remaining = Math.max(0, g.cal - net);
-
-  // Update ring
-  const pct = Math.min(net/g.cal, 1);
-  const ring = document.getElementById('ringFill');
-  if(ring){ ring.style.strokeDashoffset=188.5-(pct*188.5); ring.classList.toggle('over',net>g.cal); }
-
   const el = id => document.getElementById(id);
-  if(el('calRemaining')) el('calRemaining').textContent = remaining;
-  if(el('calGoalDisp'))  el('calGoalDisp').textContent  = g.cal;
-  if(el('calConsumed'))  el('calConsumed').textContent  = net;
+
+  // Ring
+  const pct = Math.min(net/g.cal, 1);
+  const ring = el('ringFill');
+  if(ring){ ring.style.strokeDashoffset=188.5-(pct*188.5); ring.classList.toggle('over',net>g.cal); }
+  if(el('ringCal')) el('ringCal').textContent = net;
+
+  // Calorie hero — match exactly what render() sets
+  if(el('calRemaining'))  el('calRemaining').textContent  = net<=g.cal ? (g.cal-net) : '0';
+  if(el('calGoalDisp'))   el('calGoalDisp').textContent   = g.cal;
+  if(el('calGoalBarLbl')) el('calGoalBarLbl').textContent = g.cal;
+  const barPct = Math.min(net/g.cal*100, 100);
+  const pb = el('calProgressBar');
+  if(pb){ pb.style.width=barPct+'%'; pb.classList.toggle('over',net>g.cal); }
+  if(el('calBarPct'))  el('calBarPct').textContent  = Math.round(barPct)+'%';
+  if(el('statEaten'))  el('statEaten').textContent  = net;
+  if(el('statBurned')) el('statBurned').textContent = 0;
+  if(el('statNet'))    el('statNet').textContent    = net;
 
   // Macros
-  const mp = (v,max) => Math.min(Math.round(v/max*100),100);
-  if(el('valPr')){ el('valPr').textContent=t.pr+'g'; el('pctPr').textContent=mp(t.pr,g.pr)+'%'; el('barPr').style.width=mp(t.pr,g.pr)+'%'; }
-  if(el('valCa')){ el('valCa').textContent=t.ca+'g'; el('pctCa').textContent=mp(t.ca,g.ca)+'%'; el('barCa').style.width=mp(t.ca,g.ca)+'%'; }
-  if(el('valFa')){ el('valFa').textContent=t.fa+'g'; el('pctFa').textContent=mp(t.fa,g.fa)+'%'; el('barFa').style.width=mp(t.fa,g.fa)+'%'; }
+  const pp = Math.min(t.pr/g.pr*100,100);
+  const cp = Math.min(t.ca/g.ca*100,100);
+  const fp = Math.min(t.fa/g.fa*100,100);
+  if(el('valPr')){ el('valPr').textContent=t.pr+'g'; el('pctPr').textContent=Math.round(pp)+'%'; el('barPr').style.width=pp+'%'; }
+  if(el('valCa')){ el('valCa').textContent=t.ca+'g'; el('pctCa').textContent=Math.round(cp)+'%'; el('barCa').style.width=cp+'%'; }
+  if(el('valFa')){ el('valFa').textContent=t.fa+'g'; el('pctFa').textContent=Math.round(fp)+'%'; el('barFa').style.width=fp+'%'; }
+
+  // Steps card — hide for other days
+  if(el('stepsVal'))     el('stepsVal').textContent     = '—';
+  if(el('stepsCals'))    el('stepsCals').textContent    = '+0';
+  if(el('stepsBar'))     el('stepsBar').style.width     = '0%';
 
   // Meal log
   const con = el('mealLogSection');
   if(!con) return;
-  con.innerHTML = MEALS.map(meal=>{
+  con.innerHTML='';
+  MEALS.forEach(meal=>{
     const items = log[meal]||[];
-    const mCal  = items.reduce((s,i)=>s+i.cal100*i.grams/100,0);
-    return`<div class="meal-log-card">
-      <div class="meal-log-header">
-        <div class="mlh-left"><span class="mlh-icon">${MEAL_ICONS[meal]}</span><span class="mlh-name">${meal}</span></div>
+    const mCal  = items.reduce((s,i)=>s+i.cal100*i.grams/100, 0);
+    const div   = document.createElement('div');
+    div.className = 'meal-log-card';
+    const dateLabel = getViewDate().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    div.innerHTML=`
+      <div class="meal-log-hdr">
+        <div class="mlh-left">
+          <span class="mlh-icon">${MEAL_ICONS[meal]}</span>
+          <span class="mlh-name">${meal}</span>
+        </div>
         <span class="mlh-cal">${Math.round(mCal)} kcal</span>
       </div>
-      ${items.length ? items.map((item,idx)=>`
-        <div class="meal-log-item" onclick="showItemDetail('${meal}',${idx},false)" style="cursor:pointer;">
-          ${item.photo ? `<img class="mli-thumb" src="${item.photo}">` : `<div class="mli-placeholder">${item.emoji}</div>`}
-          <div class="mli-info">
-            <div class="mli-name">${item.name}</div>
-            <div class="mli-sub">${item.grams}g · P:${Math.round(item.p100*item.grams/100)}g C:${Math.round(item.c100*item.grams/100)}g F:${Math.round(item.f100*item.grams/100)}g</div>
-          </div>
-          <div class="mli-cal">${Math.round(item.cal100*item.grams/100)}</div>
-          <button class="mli-rm" onclick="event.stopPropagation();removeItemFromDate('${meal}',${idx})">×</button>
-        </div>`).join('')
-      : `<div style="padding:12px 14px;font-size:12px;color:var(--dimmed);">Nothing logged</div>`}
-    </div>`;
-  }).join('');
+      ${items.length===0
+        ? '<div class="meal-empty-row">Nothing logged</div>'
+        : items.map((item,idx)=>`
+          <div class="meal-log-item" onclick="showItemDetail('${meal}',${idx})" style="cursor:pointer;">
+            ${item.photo
+              ? `<img class="mli-thumb" src="${item.photo}">`
+              : `<div class="mli-placeholder">${item.emoji}</div>`}
+            <div class="mli-info">
+              <div class="mli-name">${item.name}</div>
+              <div class="mli-sub">${item.grams}g · P:${Math.round(item.p100*item.grams/100)}g C:${Math.round(item.c100*item.grams/100)}g F:${Math.round(item.f100*item.grams/100)}g</div>
+            </div>
+            <div class="mli-cal">${Math.round(item.cal100*item.grams/100)}</div>
+            <button class="mli-rm" onclick="event.stopPropagation();removeItemFromDate('${meal}',${idx})">×</button>
+          </div>`).join('')}
+      <button class="meal-add-btn" onclick="pendingMeal='${meal}';showScreen('log',document.getElementById('nav-log'));showToast('Adding to ${meal} on ${dateLabel}')">+ Add to ${meal}</button>
+    `;
+    con.appendChild(div);
+  });
 }
 
 function removeItemFromDate(meal, idx){
-  if(isViewingToday()){
-    removeItem(meal, idx);
-    return;
-  }
+  if(isViewingToday()){ removeItem(meal, idx); return; }
   const key = getViewDateKey();
   if(!state.otherDays) state.otherDays={};
-  if(!state.otherDays[key]) return;
+  if(!state.otherDays[key]) state.otherDays[key]={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
   state.otherDays[key][meal].splice(idx,1);
-  // Update history cal for that date
+  // Sync history totals
   const t = calcTotals(state.otherDays[key]);
   if(!state.history) state.history={};
   state.history[key]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
@@ -3152,12 +3180,11 @@ function confirmAdd(){
     state.log[pendingMeal].push(entry);
     saveState(); render();
   } else {
-    // Log to a past or future date
     const key=getViewDateKey();
     if(!state.otherDays) state.otherDays={};
     if(!state.otherDays[key]) state.otherDays[key]={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
     state.otherDays[key][pendingMeal].push(entry);
-    // Update history cal for that date
+    // Sync history totals
     const t=calcTotals(state.otherDays[key]);
     if(!state.history) state.history={};
     state.history[key]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
