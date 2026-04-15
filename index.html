@@ -911,8 +911,8 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
             <div style="font-size:22px;">🗑</div>
             <div>
-              <div style="font-size:13px;font-weight:700;color:var(--text);">Reset All Data</div>
-              <div style="font-size:11px;color:var(--dimmed);margin-top:1px;">Wipe everything and start fresh</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Reset Today's Log</div>
+              <div style="font-size:11px;color:var(--dimmed);margin-top:1px;">Clear today's entries (keeps custom foods)</div>
             </div>
           </div>
           <button onclick="resetAllData()" style="
@@ -920,7 +920,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
             border:1px solid rgba(244,63,94,0.3);color:#fb7185;padding:12px;font-size:12px;font-weight:800;
             letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;
             border-radius:10px;cursor:pointer;transition:all .2s;">
-            Reset Everything
+            Reset Today's Log
           </button>
         </div>
 
@@ -1796,10 +1796,11 @@ function removeItemFromDate(meal, idx){
 }
 
 // ── ITEM DETAIL MODAL ─────────────────────────────────────────────────
-function showItemDetail(meal, idx, isToday=true){
+function showItemDetail(meal, idx){
   const log  = isViewingToday() ? state.log : getViewLog();
   const item = (log[meal]||[])[idx];
   if(!item) return;
+
   const cal = Math.round(item.cal100*item.grams/100);
   const pr  = Math.round(item.p100 *item.grams/100);
   const ca  = Math.round(item.c100 *item.grams/100);
@@ -1813,27 +1814,90 @@ function showItemDetail(meal, idx, isToday=true){
   document.getElementById('idCa').textContent    = ca+'g';
   document.getElementById('idFa').textContent    = fa+'g';
 
-  // Details
-  const perG = item.cal100;
-  const lines = [
-    '📏 Amount: '+item.grams+'g',
-    '🔥 '+item.cal100+' kcal per 100g',
-    '💪 '+item.p100+'g protein / 100g',
-    '⚡ '+item.c100+'g carbs / 100g',
-    '🫙 '+item.f100+'g fat / 100g',
-  ];
-  // Look up description from DB
-  const dbFood = DB.find(f=>f.name===item.name);
-  if(dbFood && dbFood.desc) lines.push('📝 '+dbFood.desc);
-  document.getElementById('idDetails').innerHTML = lines.map(l=>`<div>${l}</div>`).join('');
-
   // Photo
   const photoWrap = document.getElementById('idPhotoWrap');
   const photoEl   = document.getElementById('idPhoto');
   if(item.photo){ photoWrap.style.display='block'; photoEl.src=item.photo; }
   else { photoWrap.style.display='none'; photoEl.src=''; }
 
+  const detailEl   = document.getElementById('idDetails');
+  const editBtnWrap= document.getElementById('idEditBtn');
+
+  // Builder meal — show full ingredient list + edit button
+  if(item.ingredients && item.ingredients.length){
+    detailEl.innerHTML = `
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--purple3);margin-bottom:8px;">Ingredients</div>
+      ${item.ingredients.map(ing=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(168,85,247,0.07);">
+          <span style="font-size:17px;">${ing.emoji}</span>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);">${ing.name}</div>
+            <div style="font-size:10px;color:var(--dimmed);">${ing.g}g · P${ing.p}g C${ing.c}g F${ing.f}g</div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--purple3);">${ing.cal} kcal</div>
+        </div>`).join('')}
+      <div style="margin-top:8px;font-size:11px;color:var(--dimmed);">📏 Total: ${item.grams}g · ${cal} kcal</div>`;
+
+    // Show edit button for builder meals
+    if(editBtnWrap){
+      editBtnWrap.style.display='block';
+      editBtnWrap.onclick = ()=>{
+        document.getElementById('itemDetailModal').classList.remove('open');
+        // Reload builder with these ingredients pre-selected
+        editBuilderMeal(item, meal, idx);
+      };
+    }
+  } else {
+    // Regular food item
+    const lines = [
+      '📏 Amount: '+item.grams+'g',
+      '🔥 '+item.cal100+' kcal per 100g',
+      '💪 '+item.p100+'g protein per 100g',
+      '⚡ '+item.c100+'g carbs per 100g',
+      '🫙 '+item.f100+'g fat per 100g',
+    ];
+    const dbFood = [...DB,...state.custom.map(f=>({...f,id:'c'+f.cid}))].find(f=>f.name===item.name);
+    if(dbFood && dbFood.desc && !dbFood.desc.includes('custom food')) lines.push('📝 '+dbFood.desc);
+    detailEl.innerHTML = lines.map(l=>`<div style="padding:4px 0;border-bottom:1px solid rgba(168,85,247,0.07);">${l}</div>`).join('');
+    if(editBtnWrap) editBtnWrap.style.display='none';
+  }
+
   document.getElementById('itemDetailModal').classList.add('open');
+}
+
+function editBuilderMeal(item, meal, idx){
+  // Switch to builder screen
+  showScreen('builder', null);
+  // Set meal type
+  const mt = MEAL_TYPES.find(t=>t.id===item.builderType) || MEAL_TYPES[0];
+  setMealType(mt.id);
+
+  // Pre-select all stored ingredients
+  selectedIngredients = {};
+  (item.ingredients||[]).forEach(ing=>{
+    selectedIngredients[ing.id] = {...ing,
+      _cal100: ing.g>0 ? Math.round(ing.cal/ing.g*100) : ing.cal,
+      _p100:   ing.g>0 ? Math.round(ing.p  /ing.g*100) : ing.p,
+      _c100:   ing.g>0 ? Math.round(ing.c  /ing.g*100) : ing.c,
+      _f100:   ing.g>0 ? Math.round(ing.f  /ing.g*100) : ing.f,
+    };
+  });
+
+  renderBuilderSections();
+  updateBuilderTotal();
+
+  // Remove original entry so logging replaces it
+  if(isViewingToday()){
+    state.log[meal].splice(idx,1);
+    saveState(); render();
+  } else {
+    const key=getViewDateKey();
+    if(state.otherDays&&state.otherDays[key]&&state.otherDays[key][meal]){
+      state.otherDays[key][meal].splice(idx,1);
+      saveState(); renderViewDate();
+    }
+  }
+  showToast('✏ Edit your meal, then log it again');
 }
 
 
@@ -1887,28 +1951,24 @@ function importBackup(event){
 
 function resetAllData(){
   showConfirm(
-    'Delete ALL data? This cannot be undone.\n\nExport a backup first if you need it.',
+    'Reset today\'s log only, or delete everything including custom foods?\n\nChoose carefully.',
     function(){
-      state={
-        goal:{cal:2000,pr:150,ca:250,fa:65,steps:10000},
-        log:{Breakfast:[],Lunch:[],Dinner:[],Snacks:[]},
-        steps:0,custom:[],history:{},date:new Date().toDateString()
-      };
+      // Only reset today's log and steps — keep custom foods, goals, history
+      state.log={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
+      state.steps=0;
+      state.date=new Date().toDateString();
       saveState(); render(); loadGoalInputs();
-      showToast('🗑 All data reset');
-    }
+      showToast('🗑 Today\'s log cleared. Custom foods kept.');
+    },
+    'Clear Today\'s Log'
   );
 }
 
 // Safari-safe confirm dialog (replaces native confirm() which is blocked in some contexts)
-function showConfirm(msg, onConfirm){
-  // Try native confirm first (works on Chrome desktop)
+function showConfirm(msg, onConfirm, confirmLabel='Confirm'){
   if(typeof window.confirm === 'function'){
-    try{
-      if(window.confirm(msg)){ onConfirm(); } return;
-    }catch(e){}
+    try{ if(window.confirm(msg)){ onConfirm(); } return; }catch(e){}
   }
-  // Fallback: inline modal
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.82);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML=`
@@ -1916,7 +1976,7 @@ function showConfirm(msg, onConfirm){
       <div style="font-size:14px;color:#f0e8ff;line-height:1.6;margin-bottom:20px;white-space:pre-line;">${msg}</div>
       <div style="display:flex;gap:10px;">
         <button id="cf-cancel" style="flex:1;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(240,232,255,0.6);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Cancel</button>
-        <button id="cf-ok" style="flex:1;padding:12px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:white;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Confirm</button>
+        <button id="cf-ok" style="flex:1;padding:12px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;color:white;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">${confirmLabel}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -1970,9 +2030,9 @@ function saveQuickAdd(){
   };
   state.custom.push(food);
   saveState();
-  filterFoods(); // refresh grid so it shows up immediately
+  filterFoods();
   document.getElementById('quickAddModal').classList.remove('open');
-  showToast('✅ '+food.emoji+' '+name+' added!');
+  showToast('✅ '+food.emoji+' '+name+' saved permanently!');
 }
 // ── OVERVIEW (Day / Week / Month) ─────────────────────────────────────
 let activePeriod='day';
@@ -2986,23 +3046,28 @@ function logBuilderMeal(){
   const items = Object.values(selectedIngredients);
   if(!items.length){ showToast('⚠ Pick at least one ingredient'); return; }
   const total = items.reduce((acc,i)=>({
-    cal:acc.cal+i.cal, p:acc.p+i.p, c:acc.c+i.c, f:acc.f+i.f, g:acc.g+i.g
+    cal:acc.cal+i.cal, p:acc.p+i.p, c:acc.c+i.c, f:acc.f+i.f, g:acc.g+(i.g||0)
   }),{cal:0,p:0,c:0,f:0,g:0});
 
   const mealType = MEAL_TYPES.find(t=>t.id===activeMealType);
   const name = mealType.icon+' '+mealType.label+' ('+items.length+' items)';
 
-  // Open meal picker modal for which meal slot to add to
   pendingBuilderEntry = {
     name, emoji: mealType.icon,
     cal100: Math.round(total.cal/(total.g||100)*100),
     p100:   Math.round(total.p  /(total.g||100)*100),
     c100:   Math.round(total.c  /(total.g||100)*100),
     f100:   Math.round(total.f  /(total.g||100)*100),
-    grams:  total.g,
-    photo:  null
+    grams:  total.g||100,
+    photo:  null,
+    // Store full ingredient breakdown for detail view
+    builderType: mealType.id,
+    builderLabel: mealType.label,
+    ingredients: items.map(i=>({
+      id:i.id, emoji:i.emoji, name:i.name,
+      cal:i.cal, p:i.p, c:i.c, f:i.f, g:i.g||0
+    }))
   };
-  // Show quick meal slot picker
   openBuilderLogModal(name, Math.round(total.cal));
 }
 
@@ -3273,6 +3338,8 @@ if(!_checkStorage()){
     <div id="idPhotoWrap" style="display:none;margin-bottom:14px;">
       <img id="idPhoto" style="width:100%;border-radius:12px;object-fit:cover;max-height:180px;" src="">
     </div>
+    <!-- Edit button (builder meals only) -->
+    <button id="idEditBtn" style="display:none;width:100%;background:rgba(168,85,247,0.1);border:1px solid var(--border);color:var(--purple3);padding:12px;font-size:13px;font-weight:700;border-radius:12px;cursor:pointer;font-family:'Outfit',sans-serif;margin-bottom:8px;">✏ Edit This Meal</button>
     <button onclick="document.getElementById('itemDetailModal').classList.remove('open')" style="width:100%;background:rgba(168,85,247,0.1);border:1px solid var(--border);color:var(--purple3);padding:12px;font-size:13px;font-weight:700;border-radius:12px;cursor:pointer;font-family:'Outfit',sans-serif;">Done</button>
   </div>
 </div>
