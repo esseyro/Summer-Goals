@@ -1638,25 +1638,9 @@ function selMeal(m,btn){
   btn.classList.add('sel');
 }
 
-function confirmAdd(){
-  if(!pendingFood) return;
-  const grams=curUnit==='g'
-    ?(parseFloat(document.getElementById('gramInput').value)||0)
-    :pendingSrv*(pendingFood.srv||100);
-  if(grams<=0){showToast('⚠ Enter a valid amount');return;}
-  state.log[pendingMeal].push({
-    name:pendingFood.name,emoji:pendingFood.emoji,
-    cal100:pendingFood.cal,p100:pendingFood.p,c100:pendingFood.c,f100:pendingFood.f,
-    grams:Math.round(grams),photo:pendingPhoto||null
-  });
-  saveState();render();
-  document.getElementById('addModal').classList.remove('open');
-  showToast(pendingFood.emoji+' Added to '+pendingMeal);
-}
-
 function removeItem(meal,idx){
   state.log[meal].splice(idx,1);
-  saveState();render();
+  saveState(); render(); _scheduleCloudPush();
 }
 
 // ── PHOTO ──
@@ -1865,12 +1849,10 @@ function removeItemFromDate(meal, idx){
   if(!state.otherDays) state.otherDays={};
   if(!state.otherDays[key]) state.otherDays[key]={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
   state.otherDays[key][meal].splice(idx,1);
-  // Sync history totals
   const t = calcTotals(state.otherDays[key]);
   if(!state.history) state.history={};
   state.history[key]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
-  saveState();
-  renderViewDate();
+  saveState(); renderViewDate(); _scheduleCloudPush();
 }
 
 // ── ITEM DETAIL MODAL ─────────────────────────────────────────────────
@@ -3181,7 +3163,7 @@ function confirmAdd(){
   if(_builderMode){
     if(!pendingBuilderEntry) return;
     state.log[pendingMeal].push({...pendingBuilderEntry});
-    saveState(); render();
+    saveState(); render(); _scheduleCloudPush();
     document.getElementById('addModal').classList.remove('open');
     document.getElementById('addModal').dataset.mode='';
     _resetModalUI();
@@ -3228,17 +3210,16 @@ function confirmAdd(){
   };
   if(isViewingToday()){
     state.log[pendingMeal].push(entry);
-    saveState(); render();
+    saveState(); render(); _scheduleCloudPush();
   } else {
     const key=getViewDateKey();
     if(!state.otherDays) state.otherDays={};
     if(!state.otherDays[key]) state.otherDays[key]={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
     state.otherDays[key][pendingMeal].push(entry);
-    // Sync history totals
     const t=calcTotals(state.otherDays[key]);
     if(!state.history) state.history={};
     state.history[key]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
-    saveState(); renderViewDate();
+    saveState(); renderViewDate(); _scheduleCloudPush();
   }
   document.getElementById('addModal').classList.remove('open');
   showToast(pendingFood.emoji+' Added to '+pendingMeal+(isViewingToday()?'':' on '+getViewDate().toLocaleDateString('en-US',{month:'short',day:'numeric'})));
@@ -3422,7 +3403,8 @@ async function syncNow(push=true){
             if(localSteps > (state.steps||0)) state.steps = localSteps;
           }
           delete state._user; delete state._v;
-          saveState();
+          // Write directly to storage without triggering render or cloud push
+          try{ storageSet('sg_state', JSON.stringify(state)); }catch(e){}
           render();
           setSyncStatus('ok');
           storageSet('sg_last_cloud_sync', new Date().toLocaleTimeString());
@@ -3461,15 +3443,11 @@ function syncSignOut(){
   },'Disconnect');
 }
 
-// Auto-push to cloud whenever state is saved
-const _origSaveState = saveState;
-function saveState(){
-  _origSaveState();
-  // Debounce cloud push — wait 2s after last save to batch updates
+// Auto-sync: push to cloud after any state change (called explicitly, not via saveState override)
+function _scheduleCloudPush(){
+  if(!_syncBinId || !_syncApiKey) return;
   if(_syncTimer) clearTimeout(_syncTimer);
-  if(_syncBinId && _syncApiKey){
-    _syncTimer = setTimeout(()=>syncNow(true), 2000);
-  }
+  _syncTimer = setTimeout(()=>syncNow(true), 3000);
 }
 
 // ── INIT ──
