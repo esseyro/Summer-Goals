@@ -793,6 +793,56 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
   </div>
   <div style="padding:16px 0 0;">
     <div class="settings-wrap">
+
+      <!-- Account & Sync -->
+      <div class="settings-card" id="syncCard">
+        <div class="sc-title">☁️ Account & Sync</div>
+        <div id="syncLoggedOut">
+          <div style="font-size:12px;color:var(--dimmed);line-height:1.6;margin-bottom:14px;">
+            Sync your data across devices for free using <strong style="color:var(--purple3);">JSONBin.io</strong>. Takes 2 minutes to set up:
+          </div>
+          <div style="background:rgba(168,85,247,0.06);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-bottom:14px;font-size:11px;color:var(--dimmed);line-height:1.7;">
+            1. Go to <strong style="color:var(--purple3);">jsonbin.io</strong> → Sign up free<br>
+            2. Click <strong style="color:var(--purple3);">API Keys</strong> → copy your Master Key<br>
+            3. Paste it below and pick a username
+          </div>
+          <div class="f-group" style="margin-bottom:10px;">
+            <label class="f-label">Your username (e.g. essey)</label>
+            <input class="f-input" id="syncUsername" placeholder="lowercase, no spaces" autocomplete="off" style="text-transform:lowercase;">
+          </div>
+          <div class="f-group" style="margin-bottom:14px;">
+            <label class="f-label">JSONBin Master Key</label>
+            <input class="f-input" id="syncApiKey" type="password" placeholder="$2b$10$..." autocomplete="off">
+          </div>
+          <button onclick="syncSignIn()" style="width:100%;background:linear-gradient(135deg,var(--purple2),var(--purple));border:none;color:white;padding:13px;font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;border-radius:12px;cursor:pointer;box-shadow:0 4px 16px var(--glow);">
+            Connect & Sync
+          </button>
+        </div>
+        <div id="syncLoggedIn" style="display:none;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--purple2),var(--purple));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white;" id="syncAvatar">E</div>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--text);" id="syncUserLabel">essey</div>
+              <div style="font-size:11px;color:var(--dimmed);" id="syncStatusLabel">Synced just now</div>
+            </div>
+            <div style="margin-left:auto;">
+              <div id="syncDot" style="width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="syncNow(true)" style="flex:1;background:linear-gradient(135deg,var(--purple2),var(--purple));border:none;color:white;padding:11px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;border-radius:10px;cursor:pointer;">
+              ↑ Push to Cloud
+            </button>
+            <button onclick="syncNow(false)" style="flex:1;background:rgba(168,85,247,0.1);border:1px solid var(--border);color:var(--purple3);padding:11px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:'Outfit',sans-serif;border-radius:10px;cursor:pointer;">
+              ↓ Pull from Cloud
+            </button>
+          </div>
+          <button onclick="syncSignOut()" style="width:100%;margin-top:8px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.25);color:#fb7185;padding:10px;font-size:11px;font-weight:700;font-family:'Outfit',sans-serif;border-radius:10px;cursor:pointer;">
+            Disconnect Account
+          </button>
+        </div>
+      </div>
+
       <!-- Goals -->
       <div class="settings-card">
         <div class="sc-title">Daily Goals</div>
@@ -1005,7 +1055,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
     <span class="nav-icon">📊</span>
     <span class="nav-label">Weekly</span>
   </button>
-  <button class="nav-item" onclick="showScreen('settings',this)" id="nav-settings">
+  <button class="nav-item" onclick="showScreen('settings',this);updateSyncStatus()" id="nav-settings">
     <span class="nav-icon">⚙️</span>
     <span class="nav-label">Settings</span>
   </button>
@@ -3202,11 +3252,231 @@ document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=
   }
 }));
 
+// ── CLOUD SYNC (JSONBin.io) ───────────────────────────────────────────
+const JSONBIN_API = 'https://api.jsonbin.io/v3';
+let _syncBinId  = null;
+let _syncApiKey = null;
+let _syncUser   = null;
+let _syncTimer  = null;
+
+function syncLoad(){
+  _syncBinId  = storageGet('sg_bin_id');
+  _syncApiKey = storageGet('sg_bin_key');
+  _syncUser   = storageGet('sg_bin_user');
+  if(_syncApiKey && _syncUser){
+    showSyncLoggedIn();
+    syncNow(false); // pull latest on load
+  }
+}
+
+function showSyncLoggedIn(){
+  document.getElementById('syncLoggedOut').style.display='none';
+  document.getElementById('syncLoggedIn').style.display='block';
+  const avatar = (_syncUser||'?')[0].toUpperCase();
+  const el = id=>document.getElementById(id);
+  if(el('syncAvatar'))    el('syncAvatar').textContent    = avatar;
+  if(el('syncUserLabel')) el('syncUserLabel').textContent = _syncUser;
+}
+
+function showSyncLoggedOut(){
+  document.getElementById('syncLoggedOut').style.display='block';
+  document.getElementById('syncLoggedIn').style.display='none';
+}
+
+async function syncSignIn(){
+  const username = (document.getElementById('syncUsername').value||'').trim().toLowerCase().replace(/\s+/g,'');
+  const apiKey   = (document.getElementById('syncApiKey').value||'').trim();
+  if(!username){ showToast('⚠ Enter a username'); return; }
+  if(!apiKey||apiKey.length<10){ showToast('⚠ Enter your JSONBin Master Key'); return; }
+
+  showToast('🔄 Connecting…');
+  _syncApiKey = apiKey;
+  _syncUser   = username;
+
+  // Check if a bin already exists for this user by searching collections
+  // We store the bin ID locally after first create, and also in a known "index" bin
+  try{
+    // Try to find existing bin via a known naming convention
+    // First try to read the user's index bin
+    const found = await findUserBin(username, apiKey);
+    if(found){
+      _syncBinId = found;
+      storageSet('sg_bin_id',   _syncBinId);
+      storageSet('sg_bin_key',  _syncApiKey);
+      storageSet('sg_bin_user', _syncUser);
+      showSyncLoggedIn();
+      await syncNow(false); // pull data
+      showToast('✅ Connected! Data loaded.');
+    } else {
+      // Create new bin for this user
+      const binId = await createUserBin(username, apiKey);
+      if(binId){
+        _syncBinId = binId;
+        storageSet('sg_bin_id',   _syncBinId);
+        storageSet('sg_bin_key',  _syncApiKey);
+        storageSet('sg_bin_user', _syncUser);
+        showSyncLoggedIn();
+        await syncNow(true); // push current data up
+        showToast('✅ Account created & synced!');
+      } else {
+        showToast('⚠ Could not connect. Check your API key.');
+        _syncApiKey=null; _syncUser=null;
+      }
+    }
+  }catch(e){
+    showToast('⚠ Connection failed. Check your key & internet.');
+    _syncApiKey=null; _syncUser=null;
+  }
+}
+
+async function findUserBin(username, apiKey){
+  // We store binId in a well-known "name" by listing bins and matching metadata
+  try{
+    const r = await fetch(`${JSONBIN_API}/b?meta=false`, {
+      headers:{'X-Master-Key': apiKey, 'X-Bin-Meta':'false'}
+    });
+    // JSONBin doesn't support searching by name in free tier directly
+    // Instead we store the binId in a second local key and also in the bin itself
+    // Check if we have a cached binId for this user in localStorage
+    const cached = storageGet('sg_bin_id_'+username);
+    if(cached){
+      // Verify it's valid
+      const check = await fetch(`${JSONBIN_API}/b/${cached}/latest`, {
+        headers:{'X-Master-Key': apiKey, 'X-Bin-Meta':'false'}
+      });
+      if(check.ok){
+        const data = await check.json();
+        // Confirm it belongs to this user
+        if(data.record && data.record._user === username) return cached;
+      }
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+async function createUserBin(username, apiKey){
+  try{
+    const payload = { _user: username, _v: 1, ...state };
+    const r = await fetch(`${JSONBIN_API}/b`, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'X-Master-Key': apiKey,
+        'X-Bin-Name': 'summer-goals-'+username,
+        'X-Bin-Private':'true'
+      },
+      body: JSON.stringify(payload)
+    });
+    if(!r.ok) return null;
+    const data = await r.json();
+    const binId = data.metadata?.id;
+    if(binId){
+      // Cache the binId for this username
+      storageSet('sg_bin_id_'+username, binId);
+      return binId;
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+async function syncNow(push=true){
+  if(!_syncBinId || !_syncApiKey){ return; }
+  setSyncStatus('syncing');
+  try{
+    if(push){
+      // Push: upload current state to cloud
+      const payload = { _user:_syncUser, _v:1, ...state };
+      const r = await fetch(`${JSONBIN_API}/b/${_syncBinId}`, {
+        method:'PUT',
+        headers:{ 'Content-Type':'application/json', 'X-Master-Key':_syncApiKey },
+        body: JSON.stringify(payload)
+      });
+      if(r.ok){
+        setSyncStatus('ok');
+        storageSet('sg_last_cloud_sync', new Date().toLocaleTimeString());
+        updateSyncStatus();
+      } else {
+        setSyncStatus('err');
+      }
+    } else {
+      // Pull: download from cloud and merge
+      const r = await fetch(`${JSONBIN_API}/b/${_syncBinId}/latest`, {
+        headers:{'X-Master-Key':_syncApiKey, 'X-Bin-Meta':'false'}
+      });
+      if(r.ok){
+        const data = await r.json();
+        const cloud = data.record || data;
+        if(cloud && cloud._user === _syncUser){
+          // Merge: cloud wins for history/otherDays, today's local log wins
+          const localLog   = state.log;
+          const localSteps = state.steps;
+          state = {...state, ...cloud};
+          // If cloud date matches today, keep local today's log
+          if(cloud.date === new Date().toDateString()){
+            // Merge logs: keep whichever has more entries
+            MEALS.forEach(m=>{
+              if((localLog[m]||[]).length > (state.log[m]||[]).length){
+                state.log[m] = localLog[m];
+              }
+            });
+            if(localSteps > (state.steps||0)) state.steps = localSteps;
+          }
+          delete state._user; delete state._v;
+          saveState();
+          render();
+          setSyncStatus('ok');
+          storageSet('sg_last_cloud_sync', new Date().toLocaleTimeString());
+          updateSyncStatus();
+        }
+      } else {
+        setSyncStatus('err');
+      }
+    }
+  }catch(e){
+    setSyncStatus('err');
+  }
+}
+
+function setSyncStatus(s){
+  const dot = document.getElementById('syncDot');
+  if(!dot) return;
+  if(s==='ok')      { dot.style.background='var(--green)'; dot.style.boxShadow='0 0 8px var(--green)'; }
+  else if(s==='err'){ dot.style.background='#f43f5e';      dot.style.boxShadow='0 0 8px rgba(244,63,94,0.5)'; }
+  else              { dot.style.background='#facc15';      dot.style.boxShadow='0 0 8px rgba(250,204,21,0.5)'; }
+}
+
+function updateSyncStatus(){
+  const el = document.getElementById('syncStatusLabel');
+  if(!el) return;
+  const last = storageGet('sg_last_cloud_sync');
+  el.textContent = last ? 'Last synced '+last : 'Not synced yet';
+}
+
+function syncSignOut(){
+  showConfirm('Disconnect cloud sync?\n\nYour local data stays on this device.',()=>{
+    _syncBinId=null; _syncApiKey=null; _syncUser=null;
+    storageSet('sg_bin_id',''); storageSet('sg_bin_key',''); storageSet('sg_bin_user','');
+    showSyncLoggedOut();
+    showToast('Disconnected from cloud sync');
+  },'Disconnect');
+}
+
+// Auto-push to cloud whenever state is saved
+const _origSaveState = saveState;
+function saveState(){
+  _origSaveState();
+  // Debounce cloud push — wait 2s after last save to batch updates
+  if(_syncTimer) clearTimeout(_syncTimer);
+  if(_syncBinId && _syncApiKey){
+    _syncTimer = setTimeout(()=>syncNow(true), 2000);
+  }
+}
+
 // ── INIT ──
 loadState();
 updateDatePill();
 buildCats();filterFoods();render();loadGoalInputs();loadNotifSettings();updatePermBanner();scheduleAll();
-initBuilder();updateLastBackupInfo();initHealthButton();
+initBuilder();updateLastBackupInfo();initHealthButton();syncLoad();
 
 // Warn if storage not available (Safari local file mode)
 if(!_checkStorage()){
