@@ -235,6 +235,26 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
   cursor:pointer;transition:all .2s;white-space:nowrap;font-family:'Outfit',sans-serif;
 }
 .cat-chip.active{background:var(--purple);color:white;border-color:var(--purple);box-shadow:0 0 12px var(--glow);}
+/* ── RECENT FOODS ── */
+.recent-section{padding:12px 16px 4px;}
+.recent-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.recent-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--dimmed);}
+.recent-clear{font-size:10px;color:rgba(168,85,247,0.5);cursor:pointer;font-weight:600;padding:2px 6px;border-radius:6px;background:none;border:none;font-family:'Outfit',sans-serif;}
+.recent-clear:hover{color:var(--purple3);}
+.recent-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.recent-scroll::-webkit-scrollbar{display:none;}
+.recent-chip{
+  flex-shrink:0;display:flex;flex-direction:column;
+  background:var(--card);border:1px solid var(--border2);border-radius:14px;
+  padding:10px 12px;cursor:pointer;transition:all .2s;min-width:88px;max-width:110px;
+}
+.recent-chip:active{border-color:var(--purple);background:rgba(168,85,247,0.08);}
+.recent-chip-emoji{font-size:22px;margin-bottom:5px;}
+.recent-chip-name{font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
+.recent-chip-cal{font-family:'Space Mono',monospace;font-size:10px;color:var(--purple3);margin-top:2px;font-weight:700;}
+.recent-chip-type{font-size:9px;color:var(--dimmed);margin-top:1px;letter-spacing:0.5px;}
+.recent-section.hidden{display:none;}
+
 .food-list{padding:0 16px;}
 .food-row{
   background:var(--card);border-radius:14px;margin-bottom:8px;
@@ -658,6 +678,8 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
       <input class="search-input" id="searchInput" type="text" placeholder="Search foods…" oninput="filterFoods()">
     </div>
   </div>
+  <!-- Recent foods/meals -->
+  <div id="recentSection"></div>
   <div class="cat-scroll" id="catScroll"></div>
   <div class="food-list" id="foodGrid"></div>
 </div>
@@ -1055,7 +1077,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
     <span class="nav-icon">🏠</span>
     <span class="nav-label">Home</span>
   </button>
-  <button class="nav-item" onclick="showScreen('log',this)" id="nav-log">
+  <button class="nav-item" onclick="showScreen('log',this);renderRecents()" id="nav-log">
     <span class="nav-icon">🔍</span>
     <span class="nav-label">Foods</span>
   </button>
@@ -1466,6 +1488,7 @@ function showScreen(id, btn){
 function openFabAdd(){
   showScreen('log', null);
   document.getElementById('nav-log').classList.add('active');
+  renderRecents();
 }
 
 // ── TOTALS ──
@@ -1597,6 +1620,7 @@ function setCat(c){
 }
 function filterFoods(){
   const q=document.getElementById('searchInput').value.toLowerCase();
+  updateRecentVisibility();
   const all=[...DB,...state.custom.map(f=>({...f,cat:'Custom'}))];
   const filtered=all.filter(f=>(activeCat==='All'||f.cat===activeCat)&&(!q||f.name.toLowerCase().includes(q)||f.desc.toLowerCase().includes(q)));
   const grid=document.getElementById('foodGrid');
@@ -2093,7 +2117,105 @@ function updateLastBackupInfo(){
   el.textContent=last?'Last backup: '+last:'No backup made yet';
 }
 
-// ── QUICK ADD FOOD ────────────────────────────────────────────────────
+// ── RECENT FOODS ─────────────────────────────────────────────────────
+const RECENT_MAX = 12;
+
+function getRecents(){
+  try{ return JSON.parse(storageGet('sg_recents')||'[]'); }catch(e){ return []; }
+}
+
+function saveRecents(arr){
+  storageSet('sg_recents', JSON.stringify(arr));
+}
+
+function addToRecents(item){
+  // item: {name, emoji, cal, type:'food'|'builder', id?}
+  let recents = getRecents();
+  // Deduplicate by name (same food logged multiple times = one entry)
+  recents = recents.filter(r => r.name !== item.name);
+  // Add to front
+  recents.unshift(item);
+  // Trim to max
+  if(recents.length > RECENT_MAX) recents = recents.slice(0, RECENT_MAX);
+  saveRecents(recents);
+  renderRecents();
+}
+
+function renderRecents(){
+  const sec = document.getElementById('recentSection');
+  if(!sec) return;
+  const recents = getRecents();
+  if(!recents.length){ sec.innerHTML=''; return; }
+
+  sec.innerHTML = `
+    <div class="recent-section">
+      <div class="recent-hdr">
+        <span class="recent-title">Recent</span>
+        <button class="recent-clear" onclick="clearRecents()">Clear</button>
+      </div>
+      <div class="recent-scroll">
+        ${recents.map((r,i)=>`
+          <div class="recent-chip" onclick="openRecentItem(${i})">
+            <div class="recent-chip-emoji">${r.emoji||'🍽'}</div>
+            <div class="recent-chip-name">${r.name}</div>
+            <div class="recent-chip-cal">${r.cal} kcal</div>
+            <div class="recent-chip-type">${r.type==='builder'?'🍽 Meal':'🥗 Food'}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function openRecentItem(idx){
+  const recents = getRecents();
+  const r = recents[idx];
+  if(!r) return;
+
+  if(r.type === 'builder'){
+    // Restore builder with saved ingredients
+    showScreen('builder', null);
+    const mt = MEAL_TYPES.find(t=>t.id===r.builderType)||MEAL_TYPES[0];
+    setMealType(mt.id);
+    selectedIngredients = {};
+    (r.ingredients||[]).forEach(ing=>{
+      selectedIngredients[ing.id] = {
+        ...ing,
+        _cal100: ing.g>0 ? Math.round(ing.cal/ing.g*100) : ing.cal,
+        _p100:   ing.g>0 ? Math.round(ing.p  /ing.g*100) : ing.p,
+        _c100:   ing.g>0 ? Math.round(ing.c  /ing.g*100) : ing.c,
+        _f100:   ing.g>0 ? Math.round(ing.f  /ing.g*100) : ing.f,
+      };
+    });
+    renderBuilderSections();
+    updateBuilderTotal();
+    showToast('🍽 '+r.name+' loaded in builder');
+  } else {
+    // Regular food — open the add modal
+    const all = [...DB, ...state.custom.map(f=>({...f, id:'c'+f.cid}))];
+    const food = r.foodId
+      ? all.find(f=>String(f.id)===String(r.foodId) || String(f.cid)===String(r.foodId))
+      : all.find(f=>f.name===r.name);
+    if(food){
+      openAddModal(food.id !== undefined ? food.id : 'c'+food.cid);
+    } else {
+      showToast('⚠ Food no longer in database');
+    }
+  }
+}
+
+function clearRecents(){
+  saveRecents([]);
+  renderRecents();
+  showToast('Recent cleared');
+}
+
+// Hide/show recents based on search input
+function updateRecentVisibility(){
+  const q = (document.getElementById('searchInput')?.value||'').trim();
+  const sec = document.getElementById('recentSection');
+  if(sec) sec.classList.toggle('hidden', q.length > 0);
+}
+
+
 function openQuickAdd(){
   // Clear fields
   ['qa-name','qa-emoji','qa-cal','qa-pr','qa-ca','qa-fa'].forEach(id=>{
@@ -3163,7 +3285,6 @@ function logBuilderMeal(){
     f100:   Math.round(total.f  /(total.g||100)*100),
     grams:  total.g||100,
     photo:  null,
-    // Store full ingredient breakdown for detail view
     builderType: mealType.id,
     builderLabel: mealType.label,
     ingredients: items.map(i=>({
@@ -3171,6 +3292,15 @@ function logBuilderMeal(){
       cal:i.cal, p:i.p, c:i.c, f:i.f, g:i.g||0
     }))
   };
+  // Track in recents — dedup by ingredient combo (name includes item count)
+  addToRecents({
+    name,
+    emoji: mealType.icon,
+    cal: Math.round(total.cal),
+    type: 'builder',
+    builderType: mealType.id,
+    ingredients: pendingBuilderEntry.ingredients
+  });
   openBuilderLogModal(name, Math.round(total.cal));
 }
 
@@ -3254,6 +3384,14 @@ function confirmAdd(){
   if(isViewingToday()){
     state.log[pendingMeal].push(entry);
     saveState(); render(); _scheduleCloudPush();
+    // Track in recents
+    addToRecents({
+      name: pendingFood.name,
+      emoji: pendingFood.emoji,
+      cal: Math.round(pendingFood.cal * entry.grams / 100),
+      type: 'food',
+      foodId: pendingFood.id || ('c'+(pendingFood.cid||''))
+    });
   } else {
     const key=getViewDateKey();
     if(!state.otherDays) state.otherDays={};
@@ -3523,7 +3661,7 @@ function _scheduleCloudPush(){
 loadState();
 updateDatePill();
 buildCats();filterFoods();render();loadGoalInputs();loadNotifSettings();updatePermBanner();scheduleAll();
-initBuilder();updateLastBackupInfo();initHealthButton();syncLoad();
+initBuilder();updateLastBackupInfo();initHealthButton();syncLoad();renderRecents();
 
 // Warn if storage not available (Safari local file mode)
 if(!_checkStorage()){
