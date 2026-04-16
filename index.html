@@ -139,15 +139,21 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
 /* Macro cards */
 .section-title{font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dimmed);padding:0 20px;margin-bottom:10px;}
 .macro-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;margin-bottom:20px;}
-.macro-card{background:var(--card);border-radius:14px;padding:14px 12px;border:1px solid var(--border2);}
-.mc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.macro-card{background:var(--card);border-radius:14px;padding:14px 12px;border:1px solid var(--border2);cursor:pointer;transition:border-color .2s;}
+.macro-card:active{border-color:var(--purple);}
+.mc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .mc-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;filter:grayscale(1) brightness(0.5);}
 .mc-icon.pr{background:rgba(255,255,255,0.06);}
 .mc-icon.ca{background:rgba(255,255,255,0.06);}
 .mc-icon.fa{background:rgba(255,255,255,0.06);}
 .mc-pct{font-size:11px;font-weight:700;color:var(--dimmed);}
-.mc-val{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;color:var(--text);}
-.mc-name{font-size:10px;color:var(--dimmed);margin-top:2px;}
+.mc-val{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;color:var(--text);line-height:1;}
+.mc-goal{font-size:9px;color:var(--dimmed);margin-top:2px;letter-spacing:0.5px;}
+.mc-remaining{display:none;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--purple3);margin-top:2px;}
+.macro-card.show-remaining .mc-val{display:none;}
+.macro-card.show-remaining .mc-remaining{display:block;}
+.macro-card.show-remaining .mc-goal{color:var(--purple3);opacity:0.7;}
+.mc-name{font-size:10px;color:var(--dimmed);margin-top:1px;}
 .mc-bar{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-top:8px;}
 .mc-bar-fill{height:100%;border-radius:2px;transition:width .6s ease;}
 .mc-bar-fill.pr{background:linear-gradient(90deg,#60a5fa,#818cf8);}
@@ -569,30 +575,36 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
   <!-- Macro cards -->
   <div class="section-title" style="margin-top:4px;">Macros</div>
   <div class="macro-cards">
-    <div class="macro-card">
+    <div class="macro-card" id="mcPr" onclick="toggleMacroRemaining('mcPr')">
       <div class="mc-top">
         <div class="mc-icon pr">💪</div>
         <div class="mc-pct" id="pctPr">0%</div>
       </div>
       <div class="mc-val" id="valPr">0g</div>
+      <div class="mc-remaining" id="remPr">0g left</div>
+      <div class="mc-goal" id="goalPr">/ 150g</div>
       <div class="mc-name">Protein</div>
       <div class="mc-bar"><div class="mc-bar-fill pr" id="barPr" style="width:0%"></div></div>
     </div>
-    <div class="macro-card">
+    <div class="macro-card" id="mcCa" onclick="toggleMacroRemaining('mcCa')">
       <div class="mc-top">
         <div class="mc-icon ca">⚡</div>
         <div class="mc-pct" id="pctCa">0%</div>
       </div>
       <div class="mc-val" id="valCa">0g</div>
+      <div class="mc-remaining" id="remCa">0g left</div>
+      <div class="mc-goal" id="goalCa">/ 250g</div>
       <div class="mc-name">Carbs</div>
       <div class="mc-bar"><div class="mc-bar-fill ca" id="barCa" style="width:0%"></div></div>
     </div>
-    <div class="macro-card">
+    <div class="macro-card" id="mcFa" onclick="toggleMacroRemaining('mcFa')">
       <div class="mc-top">
         <div class="mc-icon fa">🔥</div>
         <div class="mc-pct" id="pctFa">0%</div>
       </div>
       <div class="mc-val" id="valFa">0g</div>
+      <div class="mc-remaining" id="remFa">0g left</div>
+      <div class="mc-goal" id="goalFa">/ 65g</div>
       <div class="mc-name">Fat</div>
       <div class="mc-bar"><div class="mc-bar-fill fa" id="barFa" style="width:0%"></div></div>
     </div>
@@ -1408,21 +1420,31 @@ function loadState(){
   try{
     const s=JSON.parse(storageGet('sg_state')||'null');
     if(s){
+      if(!s.history)   s.history={};
+      if(!s.otherDays) s.otherDays={};
       // When a new day starts, archive yesterday's full log before resetting
-      if(s.date && s.date!==new Date().toDateString()){
-        if(!s.history)   s.history={};
-        if(!s.otherDays) s.otherDays={};
-        const t=calcTotals(s.log);
+      if(s.date && s.date !== new Date().toDateString()){
+        const t = calcTotals(s.log);
         // Save calorie summary to history
-        s.history[s.date]={cal:t.cal,pr:t.pr,ca:t.ca,fa:t.fa};
-        // Save full item-level log to otherDays so we can browse it later
-        s.otherDays[s.date]=JSON.parse(JSON.stringify(s.log));
+        s.history[s.date] = {cal:t.cal, pr:t.pr, ca:t.ca, fa:t.fa};
+        // Save full item-level log to otherDays (only if it has actual entries)
+        const hasEntries = MEALS.some(m=>(s.log[m]||[]).length>0);
+        if(hasEntries && !s.otherDays[s.date]){
+          s.otherDays[s.date] = JSON.parse(JSON.stringify(s.log));
+        } else if(hasEntries && s.otherDays[s.date]){
+          // Merge: keep whichever has more entries per meal
+          MEALS.forEach(m=>{
+            if((s.log[m]||[]).length > (s.otherDays[s.date][m]||[]).length){
+              s.otherDays[s.date][m] = s.log[m];
+            }
+          });
+        }
         // Reset today
-        s.log={Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
-        s.steps=0;
-        s.date=new Date().toDateString();
+        s.log   = {Breakfast:[],Lunch:[],Dinner:[],Snacks:[]};
+        s.steps = 0;
+        s.date  = new Date().toDateString();
       }
-      state={...state,...s};
+      state = {...state, ...s};
       if(!state.history)   state.history={};
       if(!state.otherDays) state.otherDays={};
     }
@@ -1500,6 +1522,15 @@ function render(){
   document.getElementById('pctPr').textContent=Math.round(pp)+'%';
   document.getElementById('pctCa').textContent=Math.round(cp)+'%';
   document.getElementById('pctFa').textContent=Math.round(fp)+'%';
+  // Goal labels
+  document.getElementById('goalPr').textContent='/ '+g.pr+'g';
+  document.getElementById('goalCa').textContent='/ '+g.ca+'g';
+  document.getElementById('goalFa').textContent='/ '+g.fa+'g';
+  // Remaining
+  const remPr=Math.max(0,g.pr-t.pr), remCa=Math.max(0,g.ca-t.ca), remFa=Math.max(0,g.fa-t.fa);
+  document.getElementById('remPr').textContent=remPr+'g left';
+  document.getElementById('remCa').textContent=remCa+'g left';
+  document.getElementById('remFa').textContent=remFa+'g left';
 
   // Steps
   const sg=g.steps||10000;
@@ -1545,7 +1576,13 @@ function render(){
 }
 
 
-// ── FOOD GRID ──
+function toggleMacroRemaining(cardId){
+  const card = document.getElementById(cardId);
+  if(!card) return;
+  card.classList.toggle('show-remaining');
+}
+
+
 let activeCat='All';
 function buildCats(){
   const cats=['All',...new Set(DB.map(f=>f.cat)),'Custom'];
@@ -1799,6 +1836,12 @@ function renderViewDate(){
   if(el('valPr')){ el('valPr').textContent=t.pr+'g'; el('pctPr').textContent=Math.round(pp)+'%'; el('barPr').style.width=pp+'%'; }
   if(el('valCa')){ el('valCa').textContent=t.ca+'g'; el('pctCa').textContent=Math.round(cp)+'%'; el('barCa').style.width=cp+'%'; }
   if(el('valFa')){ el('valFa').textContent=t.fa+'g'; el('pctFa').textContent=Math.round(fp)+'%'; el('barFa').style.width=fp+'%'; }
+  if(el('goalPr')) el('goalPr').textContent='/ '+g.pr+'g';
+  if(el('goalCa')) el('goalCa').textContent='/ '+g.ca+'g';
+  if(el('goalFa')) el('goalFa').textContent='/ '+g.fa+'g';
+  if(el('remPr'))  el('remPr').textContent=Math.max(0,g.pr-t.pr)+'g left';
+  if(el('remCa'))  el('remCa').textContent=Math.max(0,g.ca-t.ca)+'g left';
+  if(el('remFa'))  el('remFa').textContent=Math.max(0,g.fa-t.fa)+'g left';
 
   // Steps card — hide for other days
   if(el('stepsVal'))     el('stepsVal').textContent     = '—';
@@ -3388,22 +3431,48 @@ async function syncNow(push=true){
         const data = await r.json();
         const cloud = data.record || data;
         if(cloud && cloud._user === _syncUser){
-          // Merge: cloud wins for history/otherDays, today's local log wins
-          const localLog   = state.log;
+          const todayKey   = new Date().toDateString();
+          const localLog   = JSON.parse(JSON.stringify(state.log));
           const localSteps = state.steps;
-          state = {...state, ...cloud};
-          // If cloud date matches today, keep local today's log
-          if(cloud.date === new Date().toDateString()){
-            // Merge logs: keep whichever has more entries
+          const localDate  = state.date;
+          const localOtherDays = JSON.parse(JSON.stringify(state.otherDays||{}));
+
+          // Merge goals and custom foods from cloud
+          if(cloud.goal)   state.goal   = cloud.goal;
+          if(cloud.custom) state.custom = cloud.custom;
+
+          // Merge history: take union of local + cloud keys
+          if(cloud.history){
+            state.history = {...cloud.history, ...(state.history||{})};
+          }
+
+          // Merge otherDays: take union, local day wins if conflict
+          if(cloud.otherDays){
+            const merged = {...cloud.otherDays};
+            Object.keys(localOtherDays).forEach(k=>{
+              // Local wins for any date that has entries locally
+              const localHasData = MEALS.some(m=>(localOtherDays[k][m]||[]).length>0);
+              if(localHasData) merged[k] = localOtherDays[k];
+            });
+            state.otherDays = merged;
+          }
+
+          // NEVER overwrite today's log or date from cloud
+          state.log   = localLog;
+          state.steps = localSteps;
+          state.date  = localDate;
+
+          // If cloud has a newer today log (e.g. added from another device today)
+          if(cloud.date === todayKey && cloud.log){
             MEALS.forEach(m=>{
-              if((localLog[m]||[]).length > (state.log[m]||[]).length){
-                state.log[m] = localLog[m];
+              // Keep whichever device has more entries for today
+              if((cloud.log[m]||[]).length > (localLog[m]||[]).length){
+                state.log[m] = cloud.log[m];
               }
             });
-            if(localSteps > (state.steps||0)) state.steps = localSteps;
           }
+
           delete state._user; delete state._v;
-          // Write directly to storage without triggering render or cloud push
           try{ storageSet('sg_state', JSON.stringify(state)); }catch(e){}
           render();
           setSyncStatus('ok');
