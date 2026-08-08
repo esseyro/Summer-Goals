@@ -9,6 +9,13 @@
 <meta name="application-name" content="Summer Goals">
 <meta name="description" content="Offline calorie tracker — Eritrea Edition">
 <meta name="theme-color" content="#a855f7">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/Summer-Goals/sw.js');
+    });
+  }
+</script>
 <meta name="mobile-web-app-capable" content="yes">
 
 <!-- iOS Safari PWA -->
