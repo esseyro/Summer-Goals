@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -560,7 +561,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
       <div>
         <div class="cal-hero-label">Calories Remaining</div>
         <div class="cal-remaining" id="calRemaining">2000</div>
-        <div class="cal-remaining-lbl">of <span id="calGoalDisp">2000</span> goal</div>
+        <div class="cal-remaining-lbl">of <span id="calGoalDisp">2800</span> goal</div>
       </div>
       <div class="cal-ring-wrap">
         <svg class="cal-ring-svg" viewBox="0 0 72 72">
@@ -578,7 +579,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
       <div class="cal-bar-labels">
         <div class="cal-bar-label">0</div>
         <div class="cal-bar-label" id="calBarPct">0%</div>
-        <div class="cal-bar-label" id="calGoalBarLbl">2000</div>
+        <div class="cal-bar-label" id="calGoalBarLbl">2800</div>
       </div>
       <div class="cal-progress-bar"><div class="cal-progress-fill" id="calProgressBar" style="width:0%"></div></div>
     </div>
@@ -609,7 +610,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
       </div>
       <div class="mc-val" id="valPr">0g</div>
       <div class="mc-remaining" id="remPr">0g left</div>
-      <div class="mc-goal" id="goalPr">/ 150g</div>
+      <div class="mc-goal" id="goalPr">/ 200g</div>
       <div class="mc-name">Protein</div>
       <div class="mc-bar"><div class="mc-bar-fill pr" id="barPr" style="width:0%"></div></div>
     </div>
@@ -620,7 +621,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
       </div>
       <div class="mc-val" id="valCa">0g</div>
       <div class="mc-remaining" id="remCa">0g left</div>
-      <div class="mc-goal" id="goalCa">/ 250g</div>
+      <div class="mc-goal" id="goalCa">/ 315g</div>
       <div class="mc-name">Carbs</div>
       <div class="mc-bar"><div class="mc-bar-fill ca" id="barCa" style="width:0%"></div></div>
     </div>
@@ -631,7 +632,7 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
       </div>
       <div class="mc-val" id="valFa">0g</div>
       <div class="mc-remaining" id="remFa">0g left</div>
-      <div class="mc-goal" id="goalFa">/ 65g</div>
+      <div class="mc-goal" id="goalFa">/ 82g</div>
       <div class="mc-name">Fat</div>
       <div class="mc-bar"><div class="mc-bar-fill fa" id="barFa" style="width:0%"></div></div>
     </div>
@@ -840,20 +841,11 @@ body::after{content:'';position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;
         <div class="sc-title">☁️ Account & Sync</div>
         <div id="syncLoggedOut">
           <div style="font-size:12px;color:var(--dimmed);line-height:1.6;margin-bottom:14px;">
-            Sync your data across devices for free using <strong style="color:var(--purple3);">JSONBin.io</strong>. Takes 2 minutes to set up:
-          </div>
-          <div style="background:rgba(168,85,247,0.06);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-bottom:14px;font-size:11px;color:var(--dimmed);line-height:1.7;">
-            1. Go to <strong style="color:var(--purple3);">jsonbin.io</strong> → Sign up free<br>
-            2. Click <strong style="color:var(--purple3);">API Keys</strong> → copy your Master Key<br>
-            3. Paste it below and pick a username
-          </div>
-          <div class="f-group" style="margin-bottom:10px;">
-            <label class="f-label">Your username (e.g. essey)</label>
-            <input class="f-input" id="syncUsername" placeholder="lowercase, no spaces" autocomplete="off" style="text-transform:lowercase;">
+            Pick a username to sync your data across devices. No account or sign-up needed.
           </div>
           <div class="f-group" style="margin-bottom:14px;">
-            <label class="f-label">JSONBin Master Key</label>
-            <input class="f-input" id="syncApiKey" type="password" placeholder="$2b$10$..." autocomplete="off">
+            <label class="f-label">Your username (e.g. essey)</label>
+            <input class="f-input" id="syncUsername" placeholder="lowercase, no spaces" autocomplete="off" style="text-transform:lowercase;">
           </div>
           <button onclick="syncSignIn()" style="width:100%;background:linear-gradient(135deg,var(--purple2),var(--purple));border:none;color:white;padding:13px;font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-family:'Outfit',sans-serif;border-radius:12px;cursor:pointer;box-shadow:0 4px 16px var(--glow);">
             Connect & Sync
@@ -1437,7 +1429,7 @@ function storageSet(k,v){ if(_checkStorage()){ try{ localStorage.setItem(k,v); r
 
 // ── STATE ──
 let state={
-  goal:{cal:2000,pr:150,ca:250,fa:65,steps:10000},
+  goal:{cal:2800,pr:200,ca:315,fa:82,steps:10000},
   log:{Breakfast:[],Lunch:[],Dinner:[],Snacks:[]},
   steps:0,
   custom:[],
@@ -3430,9 +3422,9 @@ let _syncTimer  = null;
 
 function syncLoad(){
   _syncBinId  = storageGet('sg_bin_id');
-  _syncApiKey = storageGet('sg_bin_key');
   _syncUser   = storageGet('sg_bin_user');
-  if(_syncApiKey && _syncUser){
+  if(_syncUser){
+    _syncApiKey = '$2b$10$7nMmgHBQRMzTEdKg3aFOT.fZBWkCKqnSnJE5bMgJSZ3SB6kF0PCSS';
     showSyncLoggedIn();
     syncNow(false); // pull latest on load
   }
@@ -3454,12 +3446,11 @@ function showSyncLoggedOut(){
 
 async function syncSignIn(){
   const username = (document.getElementById('syncUsername').value||'').trim().toLowerCase().replace(/\s+/g,'');
-  const apiKey   = (document.getElementById('syncApiKey').value||'').trim();
   if(!username){ showToast('⚠ Enter a username'); return; }
-  if(!apiKey||apiKey.length<10){ showToast('⚠ Enter your JSONBin Master Key'); return; }
 
   showToast('🔄 Connecting…');
-  _syncApiKey = apiKey;
+  // Use shared built-in key — no user setup required
+  _syncApiKey = '$2b$10$7nMmgHBQRMzTEdKg3aFOT.fZBWkCKqnSnJE5bMgJSZ3SB6kF0PCSS';
   _syncUser   = username;
 
   // Check if a bin already exists for this user by searching collections
@@ -3471,7 +3462,7 @@ async function syncSignIn(){
     if(found){
       _syncBinId = found;
       storageSet('sg_bin_id',   _syncBinId);
-      storageSet('sg_bin_key',  _syncApiKey);
+      
       storageSet('sg_bin_user', _syncUser);
       showSyncLoggedIn();
       await syncNow(false); // pull data
@@ -3482,7 +3473,7 @@ async function syncSignIn(){
       if(binId){
         _syncBinId = binId;
         storageSet('sg_bin_id',   _syncBinId);
-        storageSet('sg_bin_key',  _syncApiKey);
+        
         storageSet('sg_bin_user', _syncUser);
         showSyncLoggedIn();
         await syncNow(true); // push current data up
